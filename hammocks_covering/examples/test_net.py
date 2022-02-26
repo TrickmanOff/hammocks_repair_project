@@ -23,7 +23,7 @@ def create_net():
     net.places.add(start)
 
     plcs = [None]
-    for i in range(1, 17):
+    for i in range(1, 18):
         plcs.append(PetriNet.Place(f"p{i}"))
         net.places.add(plcs[i])
 
@@ -54,6 +54,8 @@ def create_net():
     hidden_transitions['admit helplessness'] = make_transition('admit helplessness', net, is_hidden=True)
     hidden_transitions['no 1st vendor'] = make_transition('no 1st vendor', net, is_hidden=True)
     hidden_transitions['no 2nd vendor'] = make_transition('no 2nd vendor', net, is_hidden=True)
+    hidden_transitions['no parts'] = make_transition('no parts', net, is_hidden=True)
+    hidden_transitions['finished order'] = make_transition('finished order', net, is_hidden=True)
 
     # arcs
     petri_utils.add_arc_from_to(start, transitions['take device'], net)
@@ -70,7 +72,7 @@ def create_net():
     petri_utils.add_arc_from_to(plcs[5], transitions['repair finished'], net)
 
     petri_utils.add_arc_from_to(plcs[6], transitions['order parts'], net)
-    petri_utils.add_arc_from_to(plcs[6], transitions['complete repair'], net)
+    petri_utils.add_arc_from_to(plcs[6], hidden_transitions['no parts'], net)
 
     petri_utils.add_arc_from_to(plcs[7], transitions['1st vendor'], net)
     petri_utils.add_arc_from_to(plcs[7], hidden_transitions['no 1st vendor'], net)
@@ -80,9 +82,9 @@ def create_net():
 
     petri_utils.add_arc_from_to(plcs[9], transitions['test repair'], net)
 
-    petri_utils.add_arc_from_to(plcs[10], transitions['complete repair'], net)
+    petri_utils.add_arc_from_to(plcs[10], hidden_transitions['finished order'], net)
 
-    petri_utils.add_arc_from_to(plcs[11], transitions['complete repair'], net)
+    petri_utils.add_arc_from_to(plcs[11], hidden_transitions['finished order'], net)
 
     petri_utils.add_arc_from_to(plcs[12], transitions['repair finished'], net)
 
@@ -96,6 +98,7 @@ def create_net():
     petri_utils.add_arc_from_to(plcs[16], transitions['troubles with client'], net)
     petri_utils.add_arc_from_to(plcs[16], transitions['received payment'], net)
 
+    petri_utils.add_arc_from_to(plcs[17], transitions['complete repair'], net)
     #
     petri_utils.add_arc_from_to(transitions['take device'], plcs[1], net)
     petri_utils.add_arc_from_to(transitions['take device'], plcs[4], net)
@@ -118,6 +121,10 @@ def create_net():
     petri_utils.add_arc_from_to(transitions['2nd vendor'], plcs[11], net)
 
     petri_utils.add_arc_from_to(hidden_transitions['no 2nd vendor'], plcs[11], net)
+
+    petri_utils.add_arc_from_to(hidden_transitions['no parts'], plcs[17], net)
+
+    petri_utils.add_arc_from_to(hidden_transitions['finished order'], plcs[17], net)
 
     petri_utils.add_arc_from_to(transitions['complete repair'], plcs[9], net)
 
