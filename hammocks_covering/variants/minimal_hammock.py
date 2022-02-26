@@ -131,8 +131,8 @@ def _find_candidate(traverse_queue, path_to_target, pos_in_path, suffix_nodes, c
                 raise Exception("Path length exceeded")
 
     used_nodes = set()
-    new_cand_pos = cur_cand_pos
     while True:
+        new_cand_pos = cur_cand_pos
         while traverse_queue:
             new_used_nodes, visited_suffix_nodes = _bfs(traverse_queue, stop_nodes=suffix_nodes, used=used,
                                                         reverse_order=reverse_order)
@@ -181,6 +181,7 @@ def apply(covered_nodes: Set[Union[PetriNet.Place, PetriNet.Transition]],
     ---------------
     hammock
         The minimal hammock that covers the `covered_nodes`
+        Time complexity - O(m), where m is the number of edges in the net
     """
     covered_nodes = set(covered_nodes)
 
