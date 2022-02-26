@@ -12,7 +12,10 @@ def get_label(obj, default_label):
     if isinstance(obj, PetriNet.Place):
         return default_label
     else:
-        return obj.label
+        if obj.label is None:
+            return ""
+        else:
+            return obj.label
 
 
 def visualize_hammock(net, hammock, covered_set):

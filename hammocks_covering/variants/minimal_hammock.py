@@ -34,26 +34,42 @@ class NodeFilter:
 
 
 def _bfs(start_nodes, target_node=None, stop_nodes=None, used=None, reverse_order: bool = False):
+    """
+    if target_node is not None -> path mode
+    otherwise                  -> traversal mode
+    :return:
+        in path mode
+            a path from any of the start_nodes to the target_node
+        in traversal mode
+            new_used_nodes - set of the new nodes that became used during this traversal
+            visited_stops
+    """
     parents = {}
     used = set() if used is None else used
     stop_nodes = set() if stop_nodes is None else stop_nodes
     cur_level = []
+
+    new_used_nodes = set()
+    visited_stops = set()
+
     for node in start_nodes:
         if target_node is not None:
             if node == target_node:
                 return [node]
             parents[node] = None
+        if node in used:
+            continue
+        new_used_nodes.add(node)
         used.add(node)
+        if node in stop_nodes:
+            visited_stops.add(node)
+            continue
         cur_level.append(node)
 
     next_level = []
-    visited_stops = set()
 
     while cur_level:
         for node in cur_level:
-            if node in stop_nodes:
-                visited_stops.add(node)
-                continue
             for arc in (node.in_arcs if reverse_order else node.out_arcs):
                 next_node = (arc.source if reverse_order else arc.target)
                 if next_node not in used:
@@ -61,6 +77,10 @@ def _bfs(start_nodes, target_node=None, stop_nodes=None, used=None, reverse_orde
                         parents[next_node] = node
                         if node == target_node:
                             break
+                    if next_node in stop_nodes:
+                        visited_stops.add(next_node)
+                        continue
+                    new_used_nodes.add(next_node)
                     used.add(next_node)
                     next_level.append(next_node)
         cur_level = next_level
@@ -78,7 +98,7 @@ def _bfs(start_nodes, target_node=None, stop_nodes=None, used=None, reverse_orde
         path = list(reversed(path))
         return path
     else:
-        return visited_stops
+        return new_used_nodes, visited_stops
 
 
 def _find_path(start_nodes, target_node, reverse_order=False):
@@ -91,66 +111,54 @@ def _find_path(start_nodes, target_node, reverse_order=False):
     return _bfs(start_nodes, target_node=target_node, reverse_order=reverse_order)
 
 
-def _find_candidate(covered_nodes, target_node, reverse_order=False, cand_filter: NodeFilter = NodeFilter()):
+def _find_candidate(traverse_queue, path_to_target, pos_in_path, suffix_nodes, cur_cand_pos, used: Set, reverse_order=False, cand_filter: NodeFilter = NodeFilter()):
     '''
     :return:
+        new_candidate
+        new nodes that are inside the hammock
+
         returns the `target_node` if none of the candidates are permitted by the `cand_filter`
     '''
-    path = _find_path(covered_nodes, target_node, reverse_order=reverse_order)
-    pos_in_path = {node: pos for pos, node in enumerate(path)}
-
-    middle_pos = 0
-    suffix_nodes = set(path)
-    used = set()
 
     def reduce_suffix_by(k):
-        nonlocal middle_pos, suffix_nodes
-        for _ in range(middle_pos, middle_pos + k):
-            if middle_pos >= len(path):
+        nonlocal traverse_queue, cur_cand_pos, used
+        for _ in range(0, k):
+            if cur_cand_pos >= 0:
+                traverse_queue.add(path_to_target[cur_cand_pos])
+                suffix_nodes.remove(path_to_target[cur_cand_pos])
+            cur_cand_pos += 1
+            if cur_cand_pos >= len(path_to_target):
                 raise Exception("Path length exceeded")
-            suffix_nodes.remove(path[middle_pos])
-            middle_pos += 1
 
-    prefix_node_pos = -1
+    used_nodes = set()
+    new_cand_pos = cur_cand_pos
     while True:
-        while prefix_node_pos < middle_pos:
-            start_nodes = covered_nodes if prefix_node_pos == -1 else [path[prefix_node_pos]]
-            visited_suffix_nodes = _bfs(start_nodes, stop_nodes=suffix_nodes, used=used, reverse_order=reverse_order)
+        while traverse_queue:
+            new_used_nodes, visited_suffix_nodes = _bfs(traverse_queue, stop_nodes=suffix_nodes, used=used,
+                                                        reverse_order=reverse_order)
+            traverse_queue.clear()
+            used_nodes = used_nodes.union(new_used_nodes)
 
-            new_middle_pos = middle_pos
             for node in visited_suffix_nodes:
-                new_middle_pos = max(new_middle_pos, pos_in_path[node])
-            if new_middle_pos > middle_pos:
-                reduce_suffix_by(new_middle_pos - middle_pos)
-            prefix_node_pos += 1
+                new_cand_pos = max(new_cand_pos, pos_in_path[node])
+            if new_cand_pos > cur_cand_pos:
+                reduce_suffix_by(new_cand_pos - cur_cand_pos)
 
-        if middle_pos + 1 == len(path) or cand_filter.is_permitted(path[middle_pos]):
+        if new_cand_pos + 1 == len(path_to_target) or cand_filter.is_permitted(path_to_target[new_cand_pos]):
             break
         reduce_suffix_by(1)
 
-    return path[middle_pos]
+    return new_cand_pos, used_nodes
 
 
-def _find_source_candidate(covered_nodes, net_source, parameters=None):
+def _find_source_candidate(traverse_queue, path_to_target, pos_in_path, suffix_nodes, cur_cand_pos, used: Set, parameters=None):
     source_node_type = exec_utils.get_param_value(Parameters.PARAM_SOURCE_NODE_TYPE, parameters, NodeTypes.PLACE_TYPE)
-    return _find_candidate(covered_nodes, net_source, reverse_order=True, cand_filter=NodeFilter(source_node_type))
+    return _find_candidate(traverse_queue, path_to_target, pos_in_path, suffix_nodes, cur_cand_pos, used, reverse_order=True, cand_filter=NodeFilter(source_node_type))
 
 
-def _find_sink_candidate(covered_nodes, net_sink, parameters=None):
+def _find_sink_candidate(traverse_queue, path_to_target, pos_in_path, suffix_nodes, cur_cand_pos, used: Set, parameters=None):
     sink_node_type = exec_utils.get_param_value(Parameters.PARAM_SINK_NODE_TYPE, parameters, NodeTypes.PLACE_TYPE)
-    return _find_candidate(covered_nodes, net_sink, cand_filter=NodeFilter(sink_node_type))
-
-
-def _expand_as_hammock(covered_nodes, source_cand, sink_cand):
-    new_nodes = set()
-    for node in covered_nodes:
-        if node != source_cand:
-            for arc in node.in_arcs:
-                new_nodes.add(arc.source)
-        if node != sink_cand:
-            for arc in node.out_arcs:
-                new_nodes.add(arc.target)
-    return new_nodes.difference(covered_nodes)
+    return _find_candidate(traverse_queue, path_to_target, pos_in_path, suffix_nodes, cur_cand_pos, used, cand_filter=NodeFilter(sink_node_type))
 
 
 def apply(covered_nodes: Set[Union[PetriNet.Place, PetriNet.Transition]],
@@ -176,15 +184,44 @@ def apply(covered_nodes: Set[Union[PetriNet.Place, PetriNet.Transition]],
     """
     covered_nodes = set(covered_nodes)
 
-    while True:
-        source_cand = _find_source_candidate(covered_nodes, net_source, parameters)
-        sink_cand = _find_sink_candidate(covered_nodes, net_sink, parameters)
+    SRC = 0
+    SINK = 1
 
-        covered_nodes.add(source_cand)
-        covered_nodes.add(sink_cand)
-        new_nodes = _expand_as_hammock(covered_nodes, source_cand, sink_cand)
-        if not new_nodes:
-            break
-        covered_nodes = covered_nodes.union(new_nodes)
+    path_to = [None, None]
+    path_to[SRC] = _find_path(covered_nodes, net_source, reverse_order=True)
+    path_to[SINK] = _find_path(covered_nodes, net_sink)
 
-    return Hammock(source_cand, sink_cand, covered_nodes)
+    pos_in_path = [None, None]
+    pos_in_path[SRC] = {node: pos for pos, node in enumerate(path_to[SRC])}
+    pos_in_path[SINK] = {node: pos for pos, node in enumerate(path_to[SINK])}
+
+    suffix_nodes = [None, None]
+    suffix_nodes[SRC] = set(path_to[SRC])
+    suffix_nodes[SINK] = set(path_to[SINK])
+
+    used = [None, None]
+    used[SRC] = set()
+    used[SINK] = set()
+
+    inside_hammock = set()
+    new_inside_hammock = set(covered_nodes)
+
+    source_cand = sink_cand = 0
+
+    while new_inside_hammock:
+        source_cand, src_new_inside = _find_source_candidate(copy(new_inside_hammock), path_to[SRC], pos_in_path[SRC], suffix_nodes[SRC], source_cand, used[SRC], parameters)
+        sink_cand, sink_new_inside = _find_sink_candidate(copy(new_inside_hammock), path_to[SINK], pos_in_path[SINK], suffix_nodes[SINK], sink_cand, used[SINK], parameters)
+        inside_hammock = inside_hammock.union(new_inside_hammock)
+        new_inside_hammock = src_new_inside.union(sink_new_inside).difference(new_inside_hammock)
+
+        # expand
+        for arc in path_to[SRC][source_cand].out_arcs:
+            cur_node = arc.target
+            if cur_node not in inside_hammock:
+                new_inside_hammock.add(cur_node)
+        for arc in path_to[SINK][sink_cand].in_arcs:
+            cur_node = arc.source
+            if cur_node not in inside_hammock:
+                new_inside_hammock.add(cur_node)
+
+    return Hammock(path_to[SRC][source_cand], path_to[SINK][sink_cand], inside_hammock)
