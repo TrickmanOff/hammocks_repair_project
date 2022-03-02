@@ -7,4 +7,4 @@ from utils import net_helpers
 
 # min_hammock.print_min_hammock()
 # min_hammock.print_min_hammock_pairs()
-bad_pairs_hammocks_covering.print_bad_pairs_hammock()
+bad_pairs_hammocks_covering.print_bad_pairs_hammock(mode=2)

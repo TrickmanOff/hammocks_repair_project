@@ -11,8 +11,6 @@ def find_transition_by_label(net, label):
 def _del_arc(arc, net):
     if arc is None:
         return
-    if arc is None:
-        return
 
     print('removed', arc)
 
@@ -48,6 +46,7 @@ def del_trans(label, net):
             break
 
     if del_tr is None:
+        print(f'trans "{label}" not found')
         return
     print('delete', del_tr)
     net.transitions.remove(del_tr)
@@ -67,6 +66,7 @@ def del_place(label, net):
             break
 
     if del_plc is None:
+        print(f'place "{label}" not found')
         return
     print('delete', del_plc)
     net.places.remove(del_plc)
@@ -80,15 +80,15 @@ def create_arc(source_name, target_name, net):
     target = None
 
     for place in net.places:
-        if (place.name == source_name):
+        if place.name == source_name:
             source = place
-        if (place.name == target_name):
+        if place.name == target_name:
             target = place
 
     for trans in net.transitions:
-        if (trans.label == source_name):
+        if trans.label == source_name:
             source = trans
-        if (trans.label == target_name):
+        if trans.label == target_name:
             target = trans
 
     if source is None or target is None:
@@ -97,5 +97,20 @@ def create_arc(source_name, target_name, net):
     arc = PetriNet.Arc(source, target, 1)
     if arc in net.arcs:
         return
-    print('created', arc)
+
+    source.out_arcs.add(arc)
+    target.in_arcs.add(arc)
     net.arcs.add(arc)
+
+    print('created', arc)
+
+
+def add_transition(alias, net, is_hidden=False):
+    underscore = '_'.join(alias.split(' '))
+    if is_hidden:
+        t = PetriNet.Transition(name=f'{underscore}_hidden_t', label=None)
+    else:
+        t = PetriNet.Transition(name=f'{underscore}_t', label=alias)
+
+    net.transitions.add(t)
+    return t

@@ -10,9 +10,9 @@ HAMMOCK_OTHER_COLOR = '#abe6c3'
 COVERED_COLOR = '#f497b8'
 
 
-def get_label(obj, default_label):
+def get_label(obj, default_label=None):
     if isinstance(obj, PetriNet.Place):
-        return default_label
+        return obj.name if default_label is None else default_label
     else:
         if obj.label is None:
             return ""
@@ -57,31 +57,40 @@ def visualize_pairs(bad_segs_pairs, net, initial_marking, final_marking):
     """
     transition: {'color': ***, 'label': ***}
     """
-    transitions_map = {}
+    nodes_map = {}
     for trans in custom_net.transitions:
-        transitions_map[trans.label] = trans
+        nodes_map[trans.label] = trans
+    for place in custom_net.places:
+        nodes_map[place.name] = place
 
     decorations = {}
     i = 0
     tot_pairs_cnt = sum([cnt for pair_name, cnt in bad_segs_pairs.items()])
 
     for pair, cnt in bad_segs_pairs.items():
-        st, end = pair[0].label, pair[1].label
+        st, end = get_label(pair[0]), get_label(pair[1])
         i += 1
-        st = transitions_map[st]
-        end = transitions_map[end]
+        st = nodes_map[st]
+        end = nodes_map[end]
 
         # print(f'{st} -> {end}')
-
-        p = PetriNet.Place(f'pair{i}')
-        custom_net.places.add(p)
-        arc1 = PetriNet.Arc(st, p, 1)
-        arc2 = PetriNet.Arc(p, end, 1)
-        custom_net.arcs.add(arc1)
-        custom_net.arcs.add(arc2)
-
-        decorations[arc1] = {'color': f'0.000 {0.5 + cnt / (2 * tot_pairs_cnt)} 1.000'}
-        decorations[arc2] = {'color': f'0.000 {0.5 + cnt / (2 * tot_pairs_cnt)} 1.000'}
-        decorations[p] = {'color': f'0.000 {0.5 + cnt / (2 * tot_pairs_cnt)} 1.000', 'label': ''}
+        if type(st) is type(end):
+            if isinstance(st, PetriNet.Place):
+                p = PetriNet.Transition(f'pair{i}')
+            else:
+                p = PetriNet.Place(f'pair{i}')
+            custom_net.places.add(p)
+            arc1 = PetriNet.Arc(st, p, 1)
+            arc2 = PetriNet.Arc(p, end, 1)
+            custom_net.arcs.add(arc1)
+            custom_net.arcs.add(arc2)
+            decorations[arc1] = {'color': f'0.000 {0.5 + cnt / (2 * tot_pairs_cnt)} 1.000'}
+            decorations[arc2] = {'color': f'0.000 {0.5 + cnt / (2 * tot_pairs_cnt)} 1.000'}
+            decorations[p] = {'color': f'0.000 {0.5 + cnt / (2 * tot_pairs_cnt)} 1.000',
+                              'label': ''}
+        else:
+            arc = PetriNet.Arc(st, end, 1)
+            decorations[arc] = {'color': f'0.000 {0.5 + cnt / (2 * tot_pairs_cnt)} 1.000'}
+            custom_net.arcs.add(arc)
 
     return visualize.apply(custom_net, init_marking, final_marking, decorations=decorations)

@@ -24,23 +24,42 @@ def format_alignment(alignment):
     return data
 
 
-def __find_bad_pairs(net: PetriNet, alignment, initial_marking):
+def __find_bad_pairs(net: PetriNet, alignment, initial_marking, final_marking):
     '''
     alignment for one trace
-              must be formatted
+              (must be formatted)
     '''
 
+
+    '''
+    в alignment:
+     - если 1-ый      - не sync move, то сделаем пару со start position
+     - если последний - не sync move, то сделаем пару с end position
+    '''
     bad_pairs = {}  # pair : cnt
 
     marking = {}  # place -> [tokens]
     for plc in net.places:
         marking[plc] = []
 
+    start_places = {place for place, cnt in initial_marking.items()}
     for place, cnt in initial_marking.items():
+        marking[place] = []
+        for _ in range(cnt):
+            token = MyToken()
+            token.direct_ancestors = start_places
+            marking[place].append(token)
         marking[place] = [MyToken()] * cnt
 
     if DEBUG:
         print_my_marking(marking)
+
+    def add_bad_pair(pair):
+        nonlocal bad_pairs
+        if pair not in bad_pairs:
+            bad_pairs[pair] = 1
+        else:
+            bad_pairs[pair] += 1
 
     for i in range(len(alignment['model'])):
         model_label, model_name = alignment['model'][i]
@@ -78,10 +97,7 @@ def __find_bad_pairs(net: PetriNet, alignment, initial_marking):
                     pair = (red_ancestor, fired_transition)
                     if DEBUG:
                         print(f'added bad pair:\t{pair}')
-                    if pair in bad_pairs:
-                        bad_pairs[pair] += 1
-                    else:
-                        bad_pairs[pair] = 1
+                    add_bad_pair(pair)
                 union_token.red_ancestors = set()
                 union_token.direct_ancestors = {fired_transition}
             elif log_label == '>>':  # model-only move
@@ -98,6 +114,13 @@ def __find_bad_pairs(net: PetriNet, alignment, initial_marking):
         else:  # log-only move
             pass
 
+    end_places = {place for place, cnt in final_marking.items()}
+    for place, tokens in marking.items():
+        for token in tokens:
+            for red_anc in token.red_ancestors:
+                for end in end_places:
+                    add_bad_pair((red_anc, end))
+
     return bad_pairs
 
 
@@ -105,7 +128,7 @@ def find_bad_pairs(net: PetriNet, initial_marking, final_marking, log, aligned_t
     '''
     :return
         dict with elements {(t1, t2): count},
-        where (t1, t2) is a bad pair of transitions
+        where (t1, t2) is a bad pair of transitions or start/end places
          and
         count is the number of its detections
     '''
@@ -119,8 +142,9 @@ def find_bad_pairs(net: PetriNet, initial_marking, final_marking, log, aligned_t
     bad_pairs = {}
 
     for aligned_trace in aligned_traces:
+        # print(aligned_trace)
         alignment = format_alignment(aligned_trace['alignment'])
-        cur_bad_pairs = __find_bad_pairs(net, alignment, initial_marking)
+        cur_bad_pairs = __find_bad_pairs(net, alignment, initial_marking, final_marking)
         for plc, cnt in cur_bad_pairs.items():
             if plc in bad_pairs:
                 bad_pairs[plc] += cnt

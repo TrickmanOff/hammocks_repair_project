@@ -1,17 +1,6 @@
 from pm4py.objects.petri_net.obj import PetriNet, Marking
 from pm4py.objects.petri_net.utils import petri_utils
-
-
-def make_transition(alias, net, is_hidden = False):
-    t = None
-    underscore = '_'.join(alias.split(' '))
-    if is_hidden:
-        t = PetriNet.Transition(name=f'{underscore}_hidden_t', label=None)
-    else:
-        t = PetriNet.Transition(name=f'{underscore}_t', label=alias)
-
-    net.transitions.add(t)
-    return t
+from utils.net_helpers import add_transition
 
 
 def create_net():
@@ -31,30 +20,30 @@ def create_net():
 
     # transitions
     transitions = {}
-    transitions['take device'] = make_transition('take device', net)
-    transitions['inspect'] = inspect_t = make_transition('inspect', net)
-    transitions['add to the db'] = add_to_db_t = make_transition('add to the db', net)
-    transitions['start repair'] = start_rep_t = make_transition('start repair', net)
-    transitions['order parts'] = make_transition('order parts', net)
-    transitions['1st vendor'] = make_transition('1st vendor', net)
-    transitions['2nd vendor'] = make_transition('2nd vendor', net)
-    transitions['complete repair'] = make_transition('complete repair', net)
-    transitions['test repair'] = make_transition('test repair', net)
-    transitions['repair finished'] = make_transition('repair finished', net)
-    transitions['inform client'] = make_transition('inform client', net)
-    transitions['client came'] = make_transition('client came', net)
-    transitions['client didnt come'] = make_transition('client didnt come', net)
-    transitions['troubles with client'] = make_transition('troubles with client', net)
-    transitions['received payment'] = make_transition('received payment', net)
-    transitions['court'] = make_transition('court', net)
-    transitions['sell device'] = make_transition('sell device', net)
+    transitions['take device'] = add_transition('take device', net)
+    transitions['inspect'] = inspect_t = add_transition('inspect', net)
+    transitions['add to the db'] = add_to_db_t = add_transition('add to the db', net)
+    transitions['start repair'] = start_rep_t = add_transition('start repair', net)
+    transitions['order parts'] = add_transition('order parts', net)
+    transitions['1st vendor'] = add_transition('1st vendor', net)
+    transitions['2nd vendor'] = add_transition('2nd vendor', net)
+    transitions['complete repair'] = add_transition('complete repair', net)
+    transitions['test repair'] = add_transition('test repair', net)
+    transitions['repair finished'] = add_transition('repair finished', net)
+    transitions['inform client'] = add_transition('inform client', net)
+    transitions['client came'] = add_transition('client came', net)
+    transitions['client didnt come'] = add_transition('client didnt come', net)
+    transitions['troubles with client'] = add_transition('troubles with client', net)
+    transitions['received payment'] = add_transition('received payment', net)
+    transitions['court'] = add_transition('court', net)
+    transitions['sell device'] = add_transition('sell device', net)
 
     hidden_transitions = {}
-    hidden_transitions['admit helplessness'] = make_transition('admit helplessness', net, is_hidden=True)
-    hidden_transitions['no 1st vendor'] = make_transition('no 1st vendor', net, is_hidden=True)
-    hidden_transitions['no 2nd vendor'] = make_transition('no 2nd vendor', net, is_hidden=True)
-    hidden_transitions['no parts'] = make_transition('no parts', net, is_hidden=True)
-    hidden_transitions['finished order'] = make_transition('finished order', net, is_hidden=True)
+    hidden_transitions['admit helplessness'] = add_transition('admit helplessness', net, is_hidden=True)
+    hidden_transitions['no 1st vendor'] = add_transition('no 1st vendor', net, is_hidden=True)
+    hidden_transitions['no 2nd vendor'] = add_transition('no 2nd vendor', net, is_hidden=True)
+    hidden_transitions['no parts'] = add_transition('no parts', net, is_hidden=True)
+    hidden_transitions['finished order'] = add_transition('finished order', net, is_hidden=True)
 
     # arcs
     petri_utils.add_arc_from_to(start, transitions['take device'], net)
