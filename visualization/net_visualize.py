@@ -1,5 +1,4 @@
 from hammocks_covering.obj import Hammock
-from pm4py.visualization.petri_net.common import visualize
 from pm4py.objects.petri_net.obj import PetriNet, Marking
 from pm4py.visualization.petri_net.common import visualize
 from copy import copy
@@ -22,6 +21,10 @@ def get_label(obj, default_label):
 
 
 def visualize_hammocks(net, hammocks, covered_set):
+    '''
+    highlights each hammock with its source and sink
+    paint all nodes from the covered_set to red
+    '''
     decorations = {}
     for hammock in hammocks:
         decorations[hammock.source] = {'color': HAMMOCK_SOURCE_COLOR,
@@ -63,7 +66,7 @@ def visualize_pairs(bad_segs_pairs, net, initial_marking, final_marking):
     tot_pairs_cnt = sum([cnt for pair_name, cnt in bad_segs_pairs.items()])
 
     for pair, cnt in bad_segs_pairs.items():
-        st, end = pair
+        st, end = pair[0].label, pair[1].label
         i += 1
         st = transitions_map[st]
         end = transitions_map[end]

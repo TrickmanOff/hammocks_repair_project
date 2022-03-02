@@ -75,7 +75,7 @@ def __find_bad_pairs(net: PetriNet, alignment, initial_marking):
                 pass
             elif model_label == log_label:  # sync move
                 for red_ancestor in union_token.red_ancestors:  # add a pair of transitions
-                    pair = (red_ancestor, fired_transition.label)
+                    pair = (red_ancestor, fired_transition)
                     if DEBUG:
                         print(f'added bad pair:\t{pair}')
                     if pair in bad_pairs:
@@ -83,7 +83,7 @@ def __find_bad_pairs(net: PetriNet, alignment, initial_marking):
                     else:
                         bad_pairs[pair] = 1
                 union_token.red_ancestors = set()
-                union_token.direct_ancestors = set([fired_transition.label])
+                union_token.direct_ancestors = {fired_transition}
             elif log_label == '>>':  # model-only move
                 union_token.red_ancestors = set.union(union_token.red_ancestors,
                                                       union_token.direct_ancestors)
@@ -101,15 +101,20 @@ def __find_bad_pairs(net: PetriNet, alignment, initial_marking):
     return bad_pairs
 
 
-def find_bad_pairs(net: PetriNet, initial_marking, final_marking, log):
+def find_bad_pairs(net: PetriNet, initial_marking, final_marking, log, aligned_traces=None):
     '''
-    applying alignments
+    :return
+        dict with elements {(t1, t2): count},
+        where (t1, t2) is a bad pair of transitions
+         and
+        count is the number of its detections
     '''
 
-    parameters = {
-        alignments.Variants.VERSION_STATE_EQUATION_A_STAR.value.Parameters.PARAM_ALIGNMENT_RESULT_IS_SYNC_PROD_AWARE: True}
-    aligned_traces = alignments.apply_log(log, net, initial_marking,
-                                          final_marking, parameters=parameters)
+    if aligned_traces is None:
+        parameters = {
+                    alignments.Variants.VERSION_STATE_EQUATION_A_STAR.value.Parameters.PARAM_ALIGNMENT_RESULT_IS_SYNC_PROD_AWARE: True
+                    }
+        aligned_traces = alignments.apply_log(log, net, initial_marking, final_marking, parameters=parameters)
 
     bad_pairs = {}
 

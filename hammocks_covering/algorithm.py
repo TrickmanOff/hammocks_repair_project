@@ -7,7 +7,7 @@ from hammocks_covering.variants import minimal_hammock
 from typing import Optional, Dict, Any, Union, Set
 from pm4py.objects.petri_net.utils import check_soundness
 from hammocks_covering.variants.minimal_hammock import NodeTypes
-# from hammocks_covering.utils.utils import DSU
+
 
 class Variants(Enum):
     DEFAULT_ALGO = minimal_hammock

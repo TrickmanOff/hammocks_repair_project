@@ -15,7 +15,6 @@ def make_transition(alias, net, is_hidden = False):
 
 
 def create_net():
-
     net = PetriNet("my_petri_net")
 
     # places

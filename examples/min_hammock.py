@@ -1,13 +1,13 @@
-from hammocks_covering.examples import test_net
+from examples import test_net
 from pm4py.visualization.petri_net import visualizer as pn_visualizer
 from utils.net_helpers import find_transition_by_label
 from hammocks_covering import algorithm as hammocks_covering
-from visualization import hammock_vis
+from visualization import net_visualize
 from pm4py.objects.conversion.log import converter
 from pm4py.algo.simulation.playout.petri_net import algorithm as pn_playout
 from pm4py.algo.filtering.pandas.end_activities import end_activities_filter
 from utils import net_helpers
-from conformance_analysis import bad_pairs
+from conformance_analysis import finding_bad_pairs
 
 net, init_marking, final_marking = test_net.create_net()
 
@@ -31,7 +31,7 @@ def print_min_hammock():
     }
 
     min_hammock = hammocks_covering.apply(net, covered_nodes, parameters=parameters)
-    viz = hammock_vis.visualize_hammocks(net, [min_hammock], covered_nodes)
+    viz = net_visualize.visualize_hammocks(net, [min_hammock], covered_nodes)
     pn_visualizer.save(viz, 'images/hammock.png')
 
 
@@ -55,7 +55,7 @@ def print_min_hammock_pairs():
     ]
 
     pairs_vis = {(pair[0].label, pair[1].label): 1 for pair in pairs}
-    viz = hammock_vis.visualize_pairs(pairs_vis, net, init_marking, final_marking)
+    viz = net_visualize.visualize_pairs(pairs_vis, net, init_marking, final_marking)
     pn_visualizer.save(viz, 'images/pairs.png')
 
     hammocks = hammocks_covering.apply(net, __conv_pairs_to_graph(pairs), as_graph=True)
@@ -64,7 +64,7 @@ def print_min_hammock_pairs():
         nodes.append(pair[0])
         nodes.append(pair[1])
 
-    viz = hammock_vis.visualize_hammocks(net, hammocks, nodes)
+    viz = net_visualize.visualize_hammocks(net, hammocks, nodes)
     pn_visualizer.save(viz, 'images/pairs_hammocks.png')
 
 
@@ -84,5 +84,5 @@ def print_bad_pair_hammock():
         nodes.append(pair[0])
         nodes.append(pair[1])
 
-    viz = hammock_vis.visualize_hammocks(net, hammocks, nodes)
+    viz = net_visualize.visualize_hammocks(net, hammocks, nodes)
     pn_visualizer.save(viz, 'images/bad_pair_hammock.png')
