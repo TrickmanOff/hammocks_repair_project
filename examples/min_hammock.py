@@ -1,6 +1,6 @@
 from examples import test_net
 from pm4py.visualization.petri_net import visualizer as pn_visualizer
-from utils.net_helpers import find_transition_by_label
+from utils.net_helpers import find_transition
 from hammocks_covering import algorithm as hammocks_covering
 from visualization import net_visualize
 from pm4py.objects.conversion.log import converter
@@ -11,14 +11,14 @@ from conformance_analysis import finding_bad_pairs
 
 net, init_marking, final_marking = test_net.create_net()
 
-order_parts_t = find_transition_by_label(net, 'order parts')
-sec_vendor_t = find_transition_by_label(net, '2nd vendor')
-add_to_the_db_t = find_transition_by_label(net, 'add to the db')
-inspect_t = find_transition_by_label(net, 'inspect')
-client_didnt_come_t = find_transition_by_label(net, 'client didnt come')
-sell_device_t = find_transition_by_label(net, 'sell device')
-complete_repair_t = find_transition_by_label(net, 'complete repair')
-repair_finished_t = find_transition_by_label(net, 'repair finished')
+order_parts_t = find_transition('order parts', net)
+sec_vendor_t = find_transition('2nd vendor', net)
+add_to_the_db_t = find_transition('add to the db', net)
+inspect_t = find_transition('inspect', net)
+client_didnt_come_t = find_transition('client didnt come', net)
+sell_device_t = find_transition('sell device', net)
+complete_repair_t = find_transition('complete repair', net)
+repair_finished_t = find_transition('repair finished', net)
 
 
 def print_min_hammock():
@@ -76,7 +76,7 @@ def print_bad_pair_hammock():
     net_helpers.del_trans('admit_helplessness_hidden_t', net)
 
     bad_ps = bad_pairs.find_bad_pairs(net, init_marking, final_marking, converter.apply(df, variant=converter.Variants.TO_EVENT_LOG))
-    pairs = [(find_transition_by_label(net, p[0]), find_transition_by_label(net, p[1])) for p in bad_ps.keys()]
+    pairs = [(find_transition(p[0], net), find_transition(net, p[1])) for p in bad_ps.keys()]
     hammocks = hammocks_covering.apply(net, __conv_pairs_to_graph(pairs), as_graph=True)
 
     nodes = []

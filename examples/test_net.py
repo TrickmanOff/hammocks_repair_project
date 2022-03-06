@@ -1,6 +1,9 @@
 from pm4py.objects.petri_net.obj import PetriNet, Marking
 from pm4py.objects.petri_net.utils import petri_utils
 from utils.net_helpers import add_transition
+from utils import net_helpers
+from enum import Enum
+from pm4py.util import exec_utils
 
 
 def create_net():
@@ -141,3 +144,66 @@ def create_net():
     net_final_marking[end] = 1
 
     return net, net_initial_marking, net_final_marking
+
+
+def case1():
+    '''
+    delete admit_helplessness
+
+    :return
+        model_net, ...,
+        real_process_net, ...
+    '''
+    model_net, model_init_marking, model_final_marking = create_net()
+    real_net, real_init_marking, real_final_marking = create_net()
+
+    net_helpers.del_trans('admit_helplessness_hidden_t', model_net)
+
+    return model_net, model_init_marking, model_final_marking, \
+           real_net, real_init_marking, real_final_marking
+
+
+def case2():
+    '''
+    - simpler 'troubles with client' segment
+    - only one vendor
+    '''
+
+    model_net, model_init_marking, model_final_marking = create_net()
+    real_net, real_init_marking, real_final_marking = create_net()
+    # troubles with client
+    net_helpers.del_trans('client came', model_net)
+    net_helpers.del_trans('client didnt come', model_net)
+    net_helpers.del_trans('sell device', model_net)
+    net_helpers.del_trans('court', model_net)
+
+    net_helpers.del_place('p15', model_net)
+    net_helpers.del_place('p16', model_net)
+
+    net_helpers.create_arc('p14', 'received payment', model_net)
+    net_helpers.create_arc('p14', 'troubles with client', model_net)
+
+    net_helpers.add_transition('call bob', model_net)
+    net_helpers.create_arc('p3', 'call bob', model_net)
+    net_helpers.create_arc('call bob', 'end', model_net)
+
+    # vendor
+    net_helpers.del_place('p8', model_net)
+    net_helpers.del_place('p11', model_net)
+
+    net_helpers.del_trans('2nd vendor', model_net)
+    net_helpers.del_trans('no_2nd_vendor_hidden_t', model_net)
+    net_helpers.del_trans('no_1st_vendor_hidden_t', model_net)
+    net_helpers.del_trans('no_parts_hidden_t', model_net)
+
+    return model_net, model_init_marking, model_final_marking, \
+           real_net, real_init_marking, real_final_marking
+
+
+class Variants(Enum):
+    CASE1 = case1
+    CASE2 = case2
+
+
+def get_case(variant=Variants.CASE1):
+    return exec_utils.get_variant(variant)()

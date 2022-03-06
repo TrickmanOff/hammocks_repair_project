@@ -1,10 +1,34 @@
 from pm4py.objects.petri_net.obj import PetriNet, Marking
+from copy import deepcopy
+from pm4py.objects.petri_net.utils import petri_utils
+
+# TODO: get rid of the duplicates of methods from the petri_utils
 
 
-def find_transition_by_label(net, label):
+def find_transition(label, net):
     for transition in net.transitions:
-        if transition.label == label:
+        if transition.label == label or transition.name == label:
             return transition
+    return None
+
+
+def find_place(label, net):
+    for place in net.places:
+        if place.name == label:
+            return place
+
+
+def find_arc(source_name, target_name, net):
+    for arc in net.arcs:
+        match_source = (source_name == arc.source.name)
+        if isinstance(arc.source, PetriNet.Transition):
+            match_source = match_source or (source_name == arc.source.label)
+        match_target = (target_name == arc.target.name)
+        if isinstance(arc.target, PetriNet.Transition):
+            match_target = match_target or (target_name == arc.target.label)
+
+        if match_source and match_target:
+            return arc
     return None
 
 
@@ -20,18 +44,7 @@ def _del_arc(arc, net):
 
 
 def del_arc(source_name, target_name, net):
-    bad_arc = None
-    for arc in net.arcs:
-        match_source = (source_name == arc.source.name)
-        if isinstance(arc.source, PetriNet.Transition):
-            match_source = match_source or (source_name == arc.source.label)
-        match_target = (target_name == arc.target.name)
-        if isinstance(arc.target, PetriNet.Transition):
-            match_target = match_target or (target_name == arc.target.label)
-
-        if match_source and match_target:
-            bad_arc = arc
-
+    bad_arc = find_arc(source_name, target_name, net)
     _del_arc(bad_arc, net)
 
 
@@ -39,11 +52,7 @@ def del_trans(label, net):
     """
     delete with arcs
     """
-    del_tr = None
-    for trans in net.transitions:
-        if trans.label == label or trans.name == label:
-            del_tr = trans
-            break
+    del_tr = find_transition(label, net)
 
     if del_tr is None:
         print(f'trans "{label}" not found')
@@ -59,11 +68,7 @@ def del_place(label, net):
     """
     delete with arcs
     """
-    del_plc = None
-    for place in net.places:
-        if place.name == label:
-            del_plc = place
-            break
+    del_plc = find_place(label, net)
 
     if del_plc is None:
         print(f'place "{label}" not found')
@@ -114,3 +119,16 @@ def add_transition(alias, net, is_hidden=False):
 
     net.transitions.add(t)
     return t
+
+
+def deepcopy_net(net, initial_marking, final_marking):
+    net_copy = deepcopy(net)
+    initial_marking_copy = Marking()
+    for plc, cnt in initial_marking.items():
+        initial_marking_copy[find_place(plc.name, net_copy)] = cnt
+
+    final_marking_copy = Marking()
+    for plc, cnt in final_marking.items():
+        final_marking_copy[find_place(plc.name, net_copy)] = cnt
+
+    return net_copy, initial_marking_copy, final_marking_copy

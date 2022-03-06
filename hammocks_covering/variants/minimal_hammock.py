@@ -225,4 +225,6 @@ def apply(covered_nodes: Set[Union[PetriNet.Place, PetriNet.Transition]],
             if cur_node not in inside_hammock:
                 new_inside_hammock.add(cur_node)
 
-    return Hammock(path_to[SRC][source_cand], path_to[SINK][sink_cand], inside_hammock)
+    hammock_src = path_to[SRC][source_cand]
+    hammock_sink = path_to[SINK][sink_cand]
+    return Hammock(hammock_src, hammock_sink, inside_hammock.union({hammock_src, hammock_sink}))
