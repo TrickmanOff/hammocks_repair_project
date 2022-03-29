@@ -14,8 +14,8 @@ class Variants(Enum):
 
 
 class Parameters(Enum):
-    HAMMOCK_SOURCE_NODE_TYPE = minimal_hammock.Parameters.PARAM_SOURCE_NODE_TYPE.value
-    HAMMOCK_SINK_NODE_TYPE = minimal_hammock.Parameters.PARAM_SINK_NODE_TYPE.value
+    HAMMOCK_PERMITTED_SOURCE_NODE_TYPE = minimal_hammock.Parameters.PARAM_SOURCE_NODE_TYPE.value
+    HAMMOCK_PERMITTED_SINK_NODE_TYPE = minimal_hammock.Parameters.PARAM_SINK_NODE_TYPE.value
 
 
 def apply(net: PetriNet, covered_nodes, as_graph=False, parameters: Optional[Dict[Any, Any]] = None, variant: Variants = Variants.DEFAULT_ALGO):

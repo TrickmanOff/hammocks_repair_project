@@ -11,6 +11,9 @@ from examples.test_net import Variants
 import examples.test_net
 from net_repair import algorithm as net_repair_algo
 
+from pm4py.algo.discovery.inductive import algorithm as inductive_miner
+from pm4py.algo.discovery.alpha import algorithm as alpha_miner
+
 
 def visualize_net_repair(net, init_marking, final_marking, log, parameters=None,
                          bad_pairs_filename='images/bad_pairs.png',
@@ -51,10 +54,10 @@ def print_bad_pairs_hammock(case=Variants.CASE1):
     2. outdated activities
     '''
 
-
     parameters = {
-        net_repair_algo.Parameters.HAMMOCK_SOURCE_NODE_TYPE: net_repair_algo.NodeTypes.PLACE_TYPE | net_repair_algo.NodeTypes.NOT_HIDDEN_TRANS_TYPE,
-        net_repair_algo.Parameters.HAMMOCK_SINK_NODE_TYPE: net_repair_algo.NodeTypes.PLACE_TYPE | net_repair_algo.NodeTypes.NOT_HIDDEN_TRANS_TYPE
+        net_repair_algo.Parameters.HAMMOCK_PERMITTED_SOURCE_NODE_TYPE: net_repair_algo.NodeTypes.PLACE_TYPE | net_repair_algo.NodeTypes.NOT_HIDDEN_TRANS_TYPE,
+        net_repair_algo.Parameters.HAMMOCK_PERMITTED_SINK_NODE_TYPE: net_repair_algo.NodeTypes.PLACE_TYPE | net_repair_algo.NodeTypes.NOT_HIDDEN_TRANS_TYPE,
+        net_repair_algo.Parameters.SUBPROCESS_MINER_ALGO: inductive_miner,  # default value
     }
 
     model_net, model_init_marking, model_final_marking, \

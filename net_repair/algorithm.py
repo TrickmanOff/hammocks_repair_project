@@ -1,8 +1,8 @@
 from pm4py.objects.petri_net.obj import PetriNet
 from conformance_analysis import finding_bad_pairs
-from hammocks_covering import algorithm as hammocks_covering
 from typing import Optional, Dict, Any
-from hammocks_covering.algorithm import Parameters, NodeTypes
+from hammocks_covering import algorithm as hammocks_covering
+from hammocks_covering.algorithm import NodeTypes
 from copy import deepcopy
 from utils import net_helpers
 
@@ -13,6 +13,16 @@ from pm4py.algo.discovery.inductive import algorithm as inductive_miner
 from pm4py.objects.petri_net.utils import check_soundness
 from pm4py.objects.petri_net.utils import petri_utils
 import time
+
+from enum import Enum
+from pm4py.util import exec_utils
+
+
+class Parameters(Enum):
+    HAMMOCK_PERMITTED_SOURCE_NODE_TYPE = hammocks_covering.Parameters.HAMMOCK_PERMITTED_SOURCE_NODE_TYPE.value
+    HAMMOCK_PERMITTED_SINK_NODE_TYPE = hammocks_covering.Parameters.HAMMOCK_PERMITTED_SINK_NODE_TYPE.value
+    SUBPROCESS_MINER_ALGO = 'subprocess_miner_algo'
+    SUBPROCESS_MINER_ALGO_VARIANT = 'subprocess_miner_algo_variant'
 
 
 def __conv_pairs_to_graph(pairs):
@@ -30,7 +40,7 @@ def __conv_pairs_to_graph(pairs):
     return graph
 
 
-def discover_subprocess(hammock: Hammock, log):
+def discover_subprocess(hammock: Hammock, log, parameters):
     '''
     :param hammock:
         A hammock to be replaces
@@ -43,22 +53,16 @@ def discover_subprocess(hammock: Hammock, log):
     hammock_activities_labels = {node.label for node in hammock.nodes if isinstance(node, PetriNet.Transition) and node.label is not None}
     # what if empty?
     filtered_df = df[df['concept:name'].isin(hammock_activities_labels)]
-    net, _, _ = inductive_miner.apply(filtered_df)
 
-    # if the hammock starts or ends with a transition
-    # just add an artificial transition to a subprocess
+    miner_algo = exec_utils.get_param_value(Parameters.SUBPROCESS_MINER_ALGO, parameters, inductive_miner)
+    miner_algo_variant = exec_utils.get_param_value(Parameters.SUBPROCESS_MINER_ALGO_VARIANT, parameters, None)
+    if miner_algo_variant is None:
+        net, _, _ = miner_algo.apply(filtered_df, parameters=parameters)
+    else:
+        net, _, _ = miner_algo.apply(filtered_df, variant=miner_algo_variant, parameters=parameters)
 
     net_source = check_soundness.check_source_place_presence(net)
-    if isinstance(hammock.source, PetriNet.Transition):
-        hidden_trans_source = petri_utils.add_transition(net)
-        petri_utils.add_arc_from_to(hidden_trans_source, net_source, net)
-        net_source = hidden_trans_source
-
     net_sink = check_soundness.check_sink_place_presence(net)
-    if isinstance(hammock.sink, PetriNet.Transition):
-        hidden_trans_sink = petri_utils.add_transition(net)
-        petri_utils.add_arc_from_to(net_sink, hidden_trans_sink, net)
-        net_sink = hidden_trans_sink
 
     net_source.name = 'hammock_src_' + str(time.time())
     net_sink.name = 'hammock_sink_' + str(time.time())
@@ -86,8 +90,37 @@ def __remove_node(net, obj):
         petri_utils.remove_transition(net, obj)
 
 
-def replace_hammock(net: PetriNet, initial_marking, final_marking, hammock: Hammock, subprocess_net, subprocess_source, subprocess_sink):
-    # add nodes and arcs from the subprocess
+def replace_hammock(net: PetriNet, initial_marking, final_marking, hammock: Hammock,
+                    subprocess_net: PetriNet, subprocess_source, subprocess_sink):
+    '''
+    replaces the `hammock` with the `subprocess_net` in the `net`
+    '''
+
+    if isinstance(hammock.source, PetriNet.Transition):
+        if len(subprocess_source.out_arcs) == 1:
+            for out_arc in subprocess_source.out_arcs:
+                new_subprocess_source = out_arc.target
+                break
+            __remove_node(subprocess_net, subprocess_source)
+            subprocess_source = new_subprocess_source
+        else:
+            new_subprocess_source = petri_utils.add_transition(subprocess_net)
+            petri_utils.add_arc_from_to(new_subprocess_source, subprocess_source, subprocess_net)
+            subprocess_source = new_subprocess_source
+
+    if isinstance(hammock.sink, PetriNet.Transition):
+        if len(subprocess_sink.in_arcs) == 1:
+            for in_arc in subprocess_sink.in_arcs:
+                new_subprocess_sink = in_arc.source
+                break
+            __remove_node(subprocess_net, subprocess_sink)
+            subprocess_sink = new_subprocess_sink
+        else:
+            new_subprocess_sink = petri_utils.add_transition(subprocess_net)
+            petri_utils.add_arc_from_to(subprocess_sink, new_subprocess_sink, subprocess_net)
+            subprocess_sink = new_subprocess_sink
+
+    # add nodes and arcs from the subprocess to the net
     for arc in subprocess_net.arcs:
         net.arcs.add(arc)
     for plc in subprocess_net.places:
@@ -95,7 +128,7 @@ def replace_hammock(net: PetriNet, initial_marking, final_marking, hammock: Hamm
     for trans in subprocess_net.transitions:
         net.transitions.add(trans)
 
-    # connect source and sink
+    # connect source and sink of the subprocess with the net
     for in_arc in hammock.source.in_arcs:
         petri_utils.add_arc_from_to(in_arc.source, subprocess_source, net)
     for out_arc in hammock.sink.out_arcs:
@@ -119,12 +152,19 @@ def replace_hammock(net: PetriNet, initial_marking, final_marking, hammock: Hamm
 
 
 def apply(net: PetriNet, initial_marking, final_marking, log, parameters: Optional[Dict[Any, Any]] = None, aligned_traces=None):
+    '''
+    :param parameters:
+        SUBPROCESS_MINER_ALGO - process discovery algorithm to use for discovering subprocesses
+        default: inductive_miner
+
+        parameters for the miner could be specified
+    '''
     # in order not to change the initial net
     net, initial_marking, final_marking = net_helpers.deepcopy_net(net, initial_marking, final_marking)
     hammocks, _ = find_bad_hammocks(net, initial_marking, final_marking, log, parameters, aligned_traces)
 
     for hammock in hammocks:
-        subproc_net, subproc_src, subproc_sink = discover_subprocess(hammock, log)
+        subproc_net, subproc_src, subproc_sink = discover_subprocess(hammock, log, parameters)
         replace_hammock(net, initial_marking, final_marking, hammock, subproc_net, subproc_src, subproc_sink)
 
     return net, initial_marking, final_marking

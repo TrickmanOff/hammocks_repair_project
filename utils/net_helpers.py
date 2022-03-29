@@ -5,16 +5,26 @@ from pm4py.objects.petri_net.utils import petri_utils
 # TODO: get rid of the duplicates of methods from the petri_utils
 
 
-def find_transition(label, net):
+def get_transition_by_label(net: PetriNet, label):
+    '''
+    :return: the first matching transition for the `label`
+    '''
     for transition in net.transitions:
-        if transition.label == label or transition.name == label:
+        if transition.label == label:
             return transition
     return None
 
 
-def find_place(label, net):
+def find_transition(net: PetriNet, label_or_name):
+    by_label = get_transition_by_label(net, label_or_name)
+    if by_label is not None:
+        return by_label
+    return petri_utils.get_transition_by_name(net, label_or_name)
+
+
+def get_place_by_name(net: PetriNet, name):
     for place in net.places:
-        if place.name == label:
+        if place.name == name:
             return place
 
 
@@ -32,52 +42,36 @@ def find_arc(source_name, target_name, net):
     return None
 
 
-def _del_arc(arc, net):
-    if arc is None:
-        return
-
-    print('removed', arc)
-
-    arc.source.out_arcs.remove(arc)
-    arc.target.in_arcs.remove(arc)
-    net.arcs.remove(arc)
-
-
-def del_arc(source_name, target_name, net):
+def remove_arc(source_name, target_name, net):
     bad_arc = find_arc(source_name, target_name, net)
-    _del_arc(bad_arc, net)
+    petri_utils.remove_arc(net, bad_arc)
 
 
 def del_trans(label, net):
     """
     delete with arcs
     """
-    del_tr = find_transition(label, net)
+    del_tr = find_transition(net, label)
 
     if del_tr is None:
         print(f'trans "{label}" not found')
         return
+
     print('delete', del_tr)
-    net.transitions.remove(del_tr)
-    arcs_to_del = list(del_tr.in_arcs) + list(del_tr.out_arcs)
-    for arc in arcs_to_del:
-        _del_arc(arc, net)
+    return petri_utils.remove_transition(net, del_tr)
 
 
 def del_place(label, net):
     """
     delete with arcs
     """
-    del_plc = find_place(label, net)
+    del_plc = get_place_by_name(net, label)
 
     if del_plc is None:
         print(f'place "{label}" not found')
         return
     print('delete', del_plc)
-    net.places.remove(del_plc)
-    arcs_to_del = list(del_plc.in_arcs) + list(del_plc.out_arcs)
-    for arc in arcs_to_del:
-        _del_arc(arc, net)
+    return petri_utils.remove_place(net, del_plc)
 
 
 def create_arc(source_name, target_name, net):
@@ -125,10 +119,10 @@ def deepcopy_net(net, initial_marking, final_marking):
     net_copy = deepcopy(net)
     initial_marking_copy = Marking()
     for plc, cnt in initial_marking.items():
-        initial_marking_copy[find_place(plc.name, net_copy)] = cnt
+        initial_marking_copy[get_place_by_name(net_copy, plc.name)] = cnt
 
     final_marking_copy = Marking()
     for plc, cnt in final_marking.items():
-        final_marking_copy[find_place(plc.name, net_copy)] = cnt
+        final_marking_copy[get_place_by_name(net_copy, plc.name)] = cnt
 
     return net_copy, initial_marking_copy, final_marking_copy

@@ -11,14 +11,14 @@ from conformance_analysis import finding_bad_pairs
 
 net, init_marking, final_marking = test_net.create_net()
 
-order_parts_t = find_transition('order parts', net)
-sec_vendor_t = find_transition('2nd vendor', net)
-add_to_the_db_t = find_transition('add to the db', net)
-inspect_t = find_transition('inspect', net)
-client_didnt_come_t = find_transition('client didnt come', net)
-sell_device_t = find_transition('sell device', net)
-complete_repair_t = find_transition('complete repair', net)
-repair_finished_t = find_transition('repair finished', net)
+order_parts_t = find_transition(net, 'order parts')
+sec_vendor_t = find_transition(net, '2nd vendor')
+add_to_the_db_t = find_transition(net, 'add to the db')
+inspect_t = find_transition(net, 'inspect')
+client_didnt_come_t = find_transition(net, 'client didnt come')
+sell_device_t = find_transition(net, 'sell device')
+complete_repair_t = find_transition(net, 'complete repair')
+repair_finished_t = find_transition(net, 'repair finished')
 
 
 def print_min_hammock():
@@ -26,8 +26,8 @@ def print_min_hammock():
     # covered_nodes = [order_parts_t, sec_vendor_t]
 
     parameters = {
-        hammocks_covering.Parameters.HAMMOCK_SOURCE_NODE_TYPE: hammocks_covering.NodeTypes.PLACE_TYPE,
-        hammocks_covering.Parameters.HAMMOCK_SINK_NODE_TYPE: hammocks_covering.NodeTypes.PLACE_TYPE
+        hammocks_covering.Parameters.HAMMOCK_PERMITTED_SOURCE_NODE_TYPE: hammocks_covering.NodeTypes.PLACE_TYPE,
+        hammocks_covering.Parameters.HAMMOCK_PERMITTED_SINK_NODE_TYPE: hammocks_covering.NodeTypes.PLACE_TYPE
     }
 
     min_hammock = hammocks_covering.apply(net, covered_nodes, parameters=parameters)
@@ -76,7 +76,7 @@ def print_bad_pair_hammock():
     net_helpers.del_trans('admit_helplessness_hidden_t', net)
 
     bad_ps = bad_pairs.find_bad_pairs(net, init_marking, final_marking, converter.apply(df, variant=converter.Variants.TO_EVENT_LOG))
-    pairs = [(find_transition(p[0], net), find_transition(net, p[1])) for p in bad_ps.keys()]
+    pairs = [(find_transition(net, p[0]), find_transition(p[1], net)) for p in bad_ps.keys()]
     hammocks = hammocks_covering.apply(net, __conv_pairs_to_graph(pairs), as_graph=True)
 
     nodes = []
