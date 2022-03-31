@@ -8,6 +8,7 @@ HAMMOCK_SOURCE_COLOR = '0.482 0.214 0.878'
 HAMMOCK_SINK_COLOR = '#96a0f3'
 HAMMOCK_OTHER_COLOR = '#abe6c3'
 COVERED_COLOR = '#f497b8'
+DEFAULT_NODES_COLOR = '#a8f7bf'
 
 
 def get_label(obj, default_label=None):
@@ -18,6 +19,18 @@ def get_label(obj, default_label=None):
             return ""
         else:
             return obj.label
+
+
+def paint_nodes(nodes_set, color=DEFAULT_NODES_COLOR, decorations=None):
+    '''
+    :return: decorations for the visualizer
+    '''
+    if decorations is None:
+        decorations = {}
+    for node in nodes_set:
+        decorations[node] = {'color': color,
+                             'label': get_label(node, "")}
+    return decorations
 
 
 def visualize_hammocks(net, hammocks, covered_set):
@@ -31,13 +44,11 @@ def visualize_hammocks(net, hammocks, covered_set):
                                        'label': get_label(hammock.source, 'hammock source')}
         decorations[hammock.sink] = {'color': HAMMOCK_SINK_COLOR,
                                      'label': get_label(hammock.sink, 'hammock sink')}
-        for node in hammock.nodes:
-            if node != hammock.source and node != hammock.sink:
-                decorations[node] = {'color': HAMMOCK_OTHER_COLOR,
-                                     'label': get_label(node, '')}
-        for node in covered_set:
-            decorations[node] = {'color': COVERED_COLOR,
-                                 'label': get_label(node, '')}
+
+        decorations = paint_nodes(hammock.nodes.difference({hammock.source, hammock.sink}),
+                                  color=HAMMOCK_OTHER_COLOR, decorations=decorations)
+        decorations = paint_nodes(covered_set,
+                                  color=COVERED_COLOR, decorations=decorations)
     return visualize.apply(net, initial_marking={}, final_marking={}, decorations=decorations)
 
 

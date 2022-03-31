@@ -2,7 +2,7 @@ from pm4py.algo.conformance.tokenreplay import algorithm as token_replay
 from copy import copy
 from pm4py.objects.petri_net.obj import PetriNet
 from pm4py.algo.conformance.alignments.petri_net import algorithm as alignments
-
+from pm4py.objects.petri_net.utils import petri_utils
 
 DEBUG = False
 
@@ -67,11 +67,8 @@ def __find_bad_pairs(net: PetriNet, alignment, initial_marking, final_marking):
 
         if model_label != '>>':  # fired transition
             # find transition
-            fired_transition = None
-            for t in net.transitions:
-                if t.name == model_name:
-                    fired_transition = t
-                    break
+            fired_transition = petri_utils.get_transition_by_name(net, model_name)
+
             if DEBUG:
                 print(f'fired transition: {fired_transition}')
 
@@ -124,21 +121,16 @@ def __find_bad_pairs(net: PetriNet, alignment, initial_marking, final_marking):
     return bad_pairs
 
 
-def find_bad_pairs(net: PetriNet, initial_marking, final_marking, log, aligned_traces=None):
+def find_bad_pairs(net: PetriNet, initial_marking, final_marking, aligned_traces):
     '''
+    :param aligned_traces:
+        the result of applying the alignments algo to the `log` and `net`
     :return
         dict with elements {(t1, t2): count},
         where (t1, t2) is a bad pair of transitions or start/end places
          and
         count is the number of its detections
     '''
-
-    if aligned_traces is None:
-        parameters = {
-                    alignments.Variants.VERSION_STATE_EQUATION_A_STAR.value.Parameters.PARAM_ALIGNMENT_RESULT_IS_SYNC_PROD_AWARE: True
-                    }
-        aligned_traces = alignments.apply_log(log, net, initial_marking, final_marking, parameters=parameters)
-
     bad_pairs = {}
 
     for aligned_trace in aligned_traces:

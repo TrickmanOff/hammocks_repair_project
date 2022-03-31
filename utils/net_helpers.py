@@ -5,6 +5,16 @@ from pm4py.objects.petri_net.utils import petri_utils
 # TODO: get rid of the duplicates of methods from the petri_utils
 
 
+def remove_node(net: PetriNet, node):
+    '''
+    :param node: Place or Transition
+    '''
+    if isinstance(node, PetriNet.Place):
+        petri_utils.remove_place(net, node)
+    else:
+        petri_utils.remove_transition(net, node)
+
+
 def get_transition_by_label(net: PetriNet, label):
     '''
     :return: the first matching transition for the `label`

@@ -14,11 +14,12 @@ from net_repair import algorithm as net_repair_algo
 
 # min_hammock.print_min_hammock()
 # min_hammock.print_min_hammock_pairs()
-# bad_pairs_hammocks_covering.print_bad_pairs_hammock(mode=1)
+# bad_pairs_hammocks_covering.visualize_sample_repair(mode=1)
 
 
-bad_pairs_hammocks_covering.print_bad_pairs_hammock(case=bad_pairs_hammocks_covering.Variants.CASE2)
+bad_pairs_hammocks_covering.visualize_sample_repair(case=bad_pairs_hammocks_covering.Variants.CASE2, variant=net_repair_algo.Variants.NAIVE_LOG_ONLY)
 
-
+# bad_pairs_hammocks_covering.visualize_sample_repair(case=bad_pairs_hammocks_covering.Variants.CASE2,
+#                                                     variant=net_repair_algo.Variants.NAIVE_LOG_ONLY)
 
 
