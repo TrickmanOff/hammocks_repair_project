@@ -92,6 +92,7 @@ def get_log_only_moves_locations(net: PetriNet, initial_marking, final_marking, 
 # changes the alignments
 def apply(net: PetriNet, initial_marking, final_marking, log, alignments, parameters: Optional[Dict[Any, Any]] = None):
     log_only_moves_locations = get_log_only_moves_locations(net, initial_marking, final_marking, alignments)
+
     for t_label, locations_with_alignments_moves in log_only_moves_locations.items():
         for location, alignments_moves in locations_with_alignments_moves:
             transition = petri_utils.add_transition(net, name=None, label=t_label)
@@ -101,5 +102,43 @@ def apply(net: PetriNet, initial_marking, final_marking, log, alignments, parame
             for alignment, move_index in alignments_moves:
                 names, labels = alignment[move_index]
                 alignment[move_index] = ((names[0], transition.name), (labels[0], t_label))  # labels[0] == t_label
+
+    for st_plc in list(initial_marking.keys()):
+        if st_plc.in_arcs:
+            new_st_plc = petri_utils.add_place(net)
+            removed_arcs = []
+            for in_arc in st_plc.in_arcs:
+                trans = in_arc.source
+                out_arc = net_helpers.find_arc(st_plc.name, trans.name, net)
+                removed_arcs.append(out_arc)
+                petri_utils.add_arc_from_to(new_st_plc, trans, net)
+            for arc in removed_arcs:
+                petri_utils.remove_arc(net, arc)
+
+            hidden_trans = petri_utils.add_transition(net)
+            petri_utils.add_arc_from_to(new_st_plc, hidden_trans, net)
+            petri_utils.add_arc_from_to(hidden_trans, st_plc, net)
+
+            initial_marking[new_st_plc] = initial_marking[st_plc]
+            del initial_marking[st_plc]
+
+    for end_plc in list(final_marking.keys()):
+        if end_plc.out_arcs:
+            new_end_plc = petri_utils.add_place(net)
+            removed_arcs = []
+            for out_arc in end_plc.out_arcs:
+                trans = out_arc.target
+                in_arc = net_helpers.find_arc(trans.name, end_plc.name, net)
+                removed_arcs.append(in_arc)
+                petri_utils.add_arc_from_to(trans, new_end_plc, net)
+            for arc in removed_arcs:
+                petri_utils.remove_arc(net, arc)
+
+            hidden_trans = petri_utils.add_transition(net)
+            petri_utils.add_arc_from_to(end_plc, hidden_trans, net)
+            petri_utils.add_arc_from_to(hidden_trans, new_end_plc, net)
+
+            final_marking[new_end_plc] = final_marking[end_plc]
+            del final_marking[end_plc]
 
     return net, initial_marking, final_marking

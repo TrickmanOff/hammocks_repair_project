@@ -24,9 +24,10 @@ class Variants(Enum):
 
 
 '''
-repair variants that make all log-only moves in the given alignments possible as sync moves
+repair variants that change the given alignments to use them during the hammocks replacement algorithm
+it allows not to find new alignments after the prerepair
 '''
-HAMMOCKS_REPLACEMENT_LOG_ONLY_TO_SYNC_VARIANTS = {
+HAMMOCKS_REPLACEMENT_CHANGING_ALIGNMENTS_VARIANTS = {
     Variants.NAIVE_LOG_ONLY
 }
 
@@ -43,18 +44,11 @@ def apply_hammocks_repair(net: PetriNet, initial_marking, final_marking, log, al
         net, initial_marking, final_marking = exec_utils.get_variant(prerepair_variant).apply(net, initial_marking, final_marking, log,
                                                     alignments, parameters)
 
-        if prerepair_variant in HAMMOCKS_REPLACEMENT_LOG_ONLY_TO_SYNC_VARIANTS:
-            for alignment_info in alignments:
-                alignment = alignment_info['alignment']
-                for i, move in enumerate(alignment):
-                    names, labels = move
-                    model_label = labels[1]
-                    log_label = labels[0]
+    if prerepair_variant not in HAMMOCKS_REPLACEMENT_CHANGING_ALIGNMENTS_VARIANTS:
+        # recalculate the alignments
+        pass
 
-                    if model_label == '>>':  # log-only move
-                        alignment[i] = ((names[0], net_helpers.get_transition_by_label(net, log_label).name), (log_label, log_label))  # naive
-                    dbg = 0
-
+    return Variants.HAMMOCKS_REPLACEMENT.value().apply(net, initial_marking, final_marking, log, alignments, parameters)
 
 
 def apply(net: PetriNet, initial_marking, final_marking, log, parameters: Optional[Dict[Any, Any]] = None, alignments=None,
@@ -71,6 +65,6 @@ def apply(net: PetriNet, initial_marking, final_marking, log, parameters: Option
         alignments = alignments_algo.apply_log(log, net, initial_marking, final_marking, parameters=alignments_parameters)
 
     if variant == Variants.HAMMOCKS_REPLACEMENT:
-        apply_hammocks_repair(net, initial_marking, final_marking, log, alignments, parameters)
-
-    return exec_utils.get_variant(variant).apply(net, initial_marking, final_marking, log, alignments, parameters)
+        return apply_hammocks_repair(net, initial_marking, final_marking, log, alignments, parameters)
+    else:
+        return exec_utils.get_variant(variant).apply(net, initial_marking, final_marking, log, alignments, parameters)

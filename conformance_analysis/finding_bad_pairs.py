@@ -4,8 +4,6 @@ from pm4py.objects.petri_net.obj import PetriNet
 from pm4py.algo.conformance.alignments.petri_net import algorithm as alignments
 from pm4py.objects.petri_net.utils import petri_utils
 
-DEBUG = False
-
 
 class MyToken:
     def __init__(self):
@@ -20,7 +18,7 @@ def format_alignment(alignment):
     '''
     log_steps = [labels[0] for names, labels in alignment]
     model_steps = [(labels[1], names[1]) for names, labels in alignment]
-    data = {'log' : log_steps, 'model' : model_steps}
+    data = {'log': log_steps, 'model': model_steps}
     return data
 
 
@@ -36,23 +34,15 @@ def __find_bad_pairs(net: PetriNet, alignment, initial_marking, final_marking):
      - если 1-ый      - не sync move, то сделаем пару со start position
      - если последний - не sync move, то сделаем пару с end position
     '''
-    bad_pairs = {}  # pair : cnt
+    bad_pairs = {}  # pair: cnt
 
-    marking = {}  # place -> [tokens]
+    marking = {}  # place: [tokens]
     for plc in net.places:
         marking[plc] = []
 
     start_places = {place for place, cnt in initial_marking.items()}
     for place, cnt in initial_marking.items():
-        marking[place] = []
-        for _ in range(cnt):
-            token = MyToken()
-            token.direct_ancestors = start_places
-            marking[place].append(token)
         marking[place] = [MyToken()] * cnt
-
-    if DEBUG:
-        print_my_marking(marking)
 
     def add_bad_pair(pair):
         nonlocal bad_pairs
@@ -68,9 +58,6 @@ def __find_bad_pairs(net: PetriNet, alignment, initial_marking, final_marking):
         if model_label != '>>':  # fired transition
             # find transition
             fired_transition = petri_utils.get_transition_by_name(net, model_name)
-
-            if DEBUG:
-                print(f'fired transition: {fired_transition}')
 
             consumed_tokens = []
             # consume tokens
@@ -92,8 +79,6 @@ def __find_bad_pairs(net: PetriNet, alignment, initial_marking, final_marking):
             elif model_label == log_label:  # sync move
                 for red_ancestor in union_token.red_ancestors:  # add a pair of transitions
                     pair = (red_ancestor, fired_transition)
-                    if DEBUG:
-                        print(f'added bad pair:\t{pair}')
                     add_bad_pair(pair)
                 union_token.red_ancestors = set()
                 union_token.direct_ancestors = {fired_transition}
@@ -106,8 +91,6 @@ def __find_bad_pairs(net: PetriNet, alignment, initial_marking, final_marking):
                 out_plc = out_arc.target
                 marking[out_plc].append(copy(union_token))
 
-            if DEBUG:
-                print_my_marking(marking)
         else:  # log-only move
             pass
 

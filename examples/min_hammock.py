@@ -20,6 +20,8 @@ sell_device_t = find_transition(net, 'sell device')
 complete_repair_t = find_transition(net, 'complete repair')
 repair_finished_t = find_transition(net, 'repair finished')
 
+# TODO: rewrite
+
 
 def print_min_hammock():
     covered_nodes = [client_didnt_come_t, sell_device_t]
@@ -75,7 +77,7 @@ def print_bad_pair_hammock():
 
     net_helpers.del_trans('admit_helplessness_hidden_t', net)
 
-    bad_ps = bad_pairs.find_bad_pairs(net, init_marking, final_marking, converter.apply(df, variant=converter.Variants.TO_EVENT_LOG))
+    bad_ps = finding_bad_pairs.find_bad_pairs(net, init_marking, final_marking, converter.apply(df, variant=converter.Variants.TO_EVENT_LOG))
     pairs = [(find_transition(net, p[0]), find_transition(p[1], net)) for p in bad_ps.keys()]
     hammocks = hammocks_covering.apply(net, __conv_pairs_to_graph(pairs), as_graph=True)
 

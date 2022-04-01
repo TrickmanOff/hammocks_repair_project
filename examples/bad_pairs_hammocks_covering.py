@@ -63,7 +63,7 @@ def visualize_hammocks_replacement_repair(net, init_marking, final_marking, log,
     # prerepair
     prerepair_variant = exec_utils.get_param_value(
         net_repair_algo.Parameters.HAMMOCKS_REPLACEMENT_PREREPAIR_VARIANT, parameters,
-        net_repair_algo.HAMMOCKS_REPLACEMENT_DEFAULT_PREREPAIR_VARIANTREPLACEMENT_PREREPAIR_VARIANT)
+        net_repair_algo.HAMMOCKS_REPLACEMENT_DEFAULT_PREREPAIR_VARIANT)
     if prerepair_variant is not None:
         prerepair_func = visualization_variants[prerepair_variant]
         net, init_marking, final_marking = prerepair_func(net, init_marking, final_marking, log,
@@ -107,6 +107,8 @@ def visualize_hammocks_replacement_repair(net, init_marking, final_marking, log,
             visualize.apply(rep_net, rep_init_marking, rep_final_marking, decorations=decorations),
             repaired_net_filename)
 
+    return rep_net, rep_init_marking, rep_final_marking
+
 
 visualization_variants = {
     net_repair_algo.Variants.HAMMOCKS_REPLACEMENT.value: visualize_hammocks_replacement_repair,
@@ -149,5 +151,5 @@ def visualize_sample_repair(case=Variants.CASE1, parameters=None,
     real_process_net_viz = pn_visualizer.apply(real_net, real_init_marking, real_final_marking)
     pn_visualizer.save(real_process_net_viz, 'images/01-real_net.png')
 
-    visualization_variants[variant.value](model_net, model_init_marking, model_final_marking,
+    return visualization_variants[variant.value](model_net, model_init_marking, model_final_marking,
                                           filtered_sim_log, parameters=parameters)
