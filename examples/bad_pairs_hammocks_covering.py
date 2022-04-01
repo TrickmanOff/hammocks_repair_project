@@ -149,9 +149,5 @@ def visualize_sample_repair(case=Variants.CASE1, parameters=None,
     real_process_net_viz = pn_visualizer.apply(real_net, real_init_marking, real_final_marking)
     pn_visualizer.save(real_process_net_viz, 'images/01-real_net.png')
 
-    #
-    net_repair_algo.apply(model_net, model_init_marking, model_final_marking, filtered_sim_log, parameters)
-    #
-
     visualization_variants[variant.value](model_net, model_init_marking, model_final_marking,
                                           filtered_sim_log, parameters=parameters)
