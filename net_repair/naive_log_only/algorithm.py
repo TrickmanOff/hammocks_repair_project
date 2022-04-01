@@ -1,11 +1,27 @@
 from typing import Optional, Dict, Any, Set, List, Tuple
 from copy import copy
+from enum import Enum
 
 from pm4py.objects.petri_net.obj import PetriNet, Marking
 from pm4py.algo.conformance.tokenreplay.variants import token_replay
 from pm4py.objects.petri_net.utils import petri_utils
+from pm4py.util import exec_utils
+from pm4py.algo.conformance.alignments.petri_net import algorithm as alignments_algo
 
 from utils import net_helpers
+
+
+class Parameters(Enum):
+    ALIGNMENTS_REPLACE_LOGONLY_WITH = 'alignments_replace_logonly_with'  # from ReplaceLogonlyMode
+
+
+class ReplaceLogonlyMode(Enum):
+    NONE = 'none'
+    SYNC = 'sync'
+    MODEL_ONLY = 'model_only'
+
+
+DEFAULT_ALIGNMENTS_REPLACE_LOGONLY_WITH = ReplaceLogonlyMode.NONE
 
 
 def get_log_only_moves_locations(net: PetriNet, initial_marking, final_marking, alignments) -> Dict[str, List[Tuple[Set, List]]]:
@@ -89,9 +105,19 @@ def get_log_only_moves_locations(net: PetriNet, initial_marking, final_marking, 
     return log_only_moves_locations
 
 
-# changes the alignments
-def apply(net: PetriNet, initial_marking, final_marking, log, alignments, parameters: Optional[Dict[Any, Any]] = None):
+def apply(net: PetriNet, initial_marking, final_marking, log, alignments=None, parameters: Optional[Dict[Any, Any]] = None):
+    net, initial_marking, final_marking = net_helpers.deepcopy_net(net, initial_marking, final_marking)
+
+    if alignments is None:
+        alignments_parameters = {
+            alignments_algo.Parameters.PARAM_ALIGNMENT_RESULT_IS_SYNC_PROD_AWARE: True
+        }
+        alignments = alignments_algo.apply_log(log, net, initial_marking, final_marking,
+                                               parameters=alignments_parameters)
+
     log_only_moves_locations = get_log_only_moves_locations(net, initial_marking, final_marking, alignments)
+
+    replace_logonly_mode = parameters.get(Parameters.ALIGNMENTS_REPLACE_LOGONLY_WITH, DEFAULT_ALIGNMENTS_REPLACE_LOGONLY_WITH)
 
     for t_label, locations_with_alignments_moves in log_only_moves_locations.items():
         for location, alignments_moves in locations_with_alignments_moves:
@@ -101,7 +127,12 @@ def apply(net: PetriNet, initial_marking, final_marking, log, alignments, parame
                 petri_utils.add_arc_from_to(transition, plc, net)
             for alignment, move_index in alignments_moves:
                 names, labels = alignment[move_index]
-                alignment[move_index] = ((names[0], transition.name), (labels[0], t_label))  # labels[0] == t_label
+                if replace_logonly_mode == ReplaceLogonlyMode.NONE:
+                    continue
+                elif replace_logonly_mode == ReplaceLogonlyMode.SYNC:
+                    alignment[move_index] = ((names[0], transition.name), (labels[0], t_label))  # labels[0] == t_label
+                elif replace_logonly_mode == ReplaceLogonlyMode.MODEL_ONLY:
+                    alignment[move_index] = ((None, transition.name), ('>>', t_label))
 
     for st_plc in list(initial_marking.keys()):
         if st_plc.in_arcs:

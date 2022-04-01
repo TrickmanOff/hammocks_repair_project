@@ -2,20 +2,21 @@ from examples import test_net
 from pm4py.algo.simulation.playout.petri_net import algorithm as pn_playout
 from pm4py.algo.filtering.pandas.end_activities import end_activities_filter
 from pm4py.objects.conversion.log import converter
-from copy import copy, deepcopy
 from utils import net_helpers
-from net_repair import algorithm as net_repair_algo
 from visualization import net_visualize
 from pm4py.visualization.petri_net import visualizer as pn_visualizer
 from pm4py.visualization.petri_net.common import visualize
 from examples.test_net import Variants
-import examples.test_net
 from net_repair import algorithm as net_repair_algo
 
+from pm4py.objects.petri_net.utils import petri_utils
 from pm4py.util import exec_utils
 from pm4py.algo.discovery.inductive import algorithm as inductive_miner
-from pm4py.algo.discovery.alpha import algorithm as alpha_miner
 from pm4py.algo.conformance.alignments.petri_net import algorithm as alignments_algo
+
+import net_repair.hammocks_replacement.algorithm as hammocks_replacement
+import net_repair.naive_log_only.algorithm as naive_log_only
+
 
 '''
 functions in this module repeat the corresponding algorithms but with
@@ -28,13 +29,12 @@ so each function SHOULD BE REWRITTEN in case of changes in the corresponding fun
 def visualize_naive_log_repair(net, init_marking, final_marking, log, parameters=None,
                                alignments=None,
                                repaired_net_filename='images/10-repaired_naive_logonly.png'):
-    rep_net, rep_init_marking, rep_final_marking = net_repair_algo.apply(net, init_marking,
-                                                                         final_marking, log,
-                                                                         parameters, alignments,
-                                                                         variant=net_repair_algo.Variants.NAIVE_LOG_ONLY)
+    rep_net, rep_init_marking, rep_final_marking = naive_log_only.apply(net, init_marking,
+                                                                         final_marking, log, alignments,
+                                                                         parameters)
     new_transitions = []
     for trans in rep_net.transitions:
-        if net_helpers.get_transition_by_label(net, trans.label) is None:
+        if petri_utils.get_transition_by_name(net, trans.name) is None:
             new_transitions.append(trans)
     decorations = net_visualize.paint_nodes(new_transitions)
     if repaired_net_filename is not None:
@@ -55,26 +55,42 @@ def visualize_hammocks_replacement_repair(net, init_marking, final_marking, log,
     '''
 
     alignments_parameters = {
-        alignments_algo.Variants.VERSION_STATE_EQUATION_A_STAR.value.Parameters.PARAM_ALIGNMENT_RESULT_IS_SYNC_PROD_AWARE: True
+        alignments_algo.Parameters.PARAM_ALIGNMENT_RESULT_IS_SYNC_PROD_AWARE: True
     }
     alignments = alignments_algo.apply_log(log, net, init_marking, final_marking,
                                            parameters=alignments_parameters)
 
     # prerepair
     prerepair_variant = exec_utils.get_param_value(
-        net_repair_algo.Parameters.HAMMOCKS_REPLACEMENT_PREREPAIR_VARIANT, parameters,
-        net_repair_algo.HAMMOCKS_REPLACEMENT_DEFAULT_PREREPAIR_VARIANT)
+        hammocks_replacement.Parameters.PREREPAIR_VARIANT, parameters,
+        hammocks_replacement.DEFAULT_PREREPAIR_VARIANT)
     if prerepair_variant is not None:
         prerepair_func = visualization_variants[prerepair_variant]
         net, init_marking, final_marking = prerepair_func(net, init_marking, final_marking, log,
                                                           parameters, alignments,
                                                           prerepaired_net_filename)
 
+    should_recalculate_alignments = False
+    if prerepair_variant is None:
+        if alignments is None:
+            should_recalculate_alignments = True
+    elif prerepair_variant == hammocks_replacement.PrerepairVariants.NAIVE_LOG_ONLY.value:
+        if parameters.get(naive_log_only.Parameters.ALIGNMENTS_REPLACE_LOGONLY_WITH,
+                          naive_log_only.DEFAULT_ALIGNMENTS_REPLACE_LOGONLY_WITH) is naive_log_only.ReplaceLogonlyMode.NONE:
+            should_recalculate_alignments = True
+    if should_recalculate_alignments:
+        print('alignments were recalculated')
+        supress_logonly_in_alignments = exec_utils.get_param_value(hammocks_replacement.Parameters.SUPRESS_LOGONLY_IN_ALIGNMENTS, parameters, True)
+        if supress_logonly_in_alignments:
+            print('  using custom cost function')
+            parameters = hammocks_replacement.use_custom_cost_function(net, alignments, parameters)
+        alignments = alignments_algo.apply_log(log, net, init_marking, final_marking, parameters=alignments_parameters)
+
     # hammocks replacement
-    hammocks, bad_pairs = net_repair_algo.hammocks_replacement.find_bad_hammocks(net, init_marking,
-                                                                                 final_marking,
-                                                                                 alignments,
-                                                                                 parameters=parameters)
+    hammocks, bad_pairs = hammocks_replacement.find_bad_hammocks(net, init_marking,
+                                                                                                 final_marking,
+                                                                                                 alignments,
+                                                                                                 parameters=parameters)
 
     covered_nodes = [pair[0] for pair in bad_pairs.keys()] + [pair[1] for pair in bad_pairs.keys()]
     # bad pairs visualization
@@ -93,11 +109,11 @@ def visualize_hammocks_replacement_repair(net, init_marking, final_marking, log,
 
     # discovering subprocesses and replacing hammocks with them
     for hammock in hammocks:
-        subproc_net, subproc_src, subproc_sink = net_repair_algo.hammocks_replacement.discover_subprocess(
+        subproc_net, subproc_src, subproc_sink = hammocks_replacement.discover_subprocess(
             hammock, log, parameters)
-        net_repair_algo.hammocks_replacement.replace_hammock(rep_net, rep_init_marking,
-                                                             rep_final_marking, hammock,
-                                                             subproc_net, subproc_src, subproc_sink)
+        hammocks_replacement.replace_hammock(rep_net, rep_init_marking,
+                                                                             rep_final_marking, hammock,
+                                                                             subproc_net, subproc_src, subproc_sink)
         subproc_nodes = list(subproc_net.places) + list(subproc_net.transitions)
         decorations = net_visualize.paint_nodes(subproc_nodes, decorations=decorations)
 
@@ -111,13 +127,13 @@ def visualize_hammocks_replacement_repair(net, init_marking, final_marking, log,
 
 
 visualization_variants = {
-    net_repair_algo.Variants.HAMMOCKS_REPLACEMENT.value: visualize_hammocks_replacement_repair,
-    net_repair_algo.Variants.NAIVE_LOG_ONLY.value: visualize_naive_log_repair,
+    hammocks_replacement: visualize_hammocks_replacement_repair,
+    naive_log_only: visualize_naive_log_repair,
 }
 
 
 def visualize_sample_repair(case=Variants.CASE1, parameters=None,
-                            variant=net_repair_algo.DEFAULT_VARIANT):
+                            algo=hammocks_replacement):
     '''
     modes:
 
@@ -129,9 +145,9 @@ def visualize_sample_repair(case=Variants.CASE1, parameters=None,
         parameters = {}
 
     default_parameters = {
-        net_repair_algo.Parameters.HAMMOCK_PERMITTED_SOURCE_NODE_TYPE: net_repair_algo.NodeTypes.PLACE_TYPE | net_repair_algo.NodeTypes.NOT_HIDDEN_TRANS_TYPE,
-        net_repair_algo.Parameters.HAMMOCK_PERMITTED_SINK_NODE_TYPE: net_repair_algo.NodeTypes.PLACE_TYPE | net_repair_algo.NodeTypes.NOT_HIDDEN_TRANS_TYPE,
-        net_repair_algo.Parameters.SUBPROCESS_MINER_ALGO: inductive_miner,  # default value
+        hammocks_replacement.Parameters.HAMMOCK_PERMITTED_SOURCE_NODE_TYPE: hammocks_replacement.NodeTypes.PLACE_TYPE | hammocks_replacement.NodeTypes.NOT_HIDDEN_TRANS_TYPE,
+        hammocks_replacement.Parameters.HAMMOCK_PERMITTED_SINK_NODE_TYPE: hammocks_replacement.NodeTypes.PLACE_TYPE | hammocks_replacement.NodeTypes.NOT_HIDDEN_TRANS_TYPE,
+        hammocks_replacement.Parameters.SUBPROCESS_MINER_ALGO: inductive_miner,  # default value
     }
     for param, value in default_parameters.items():
         if param not in parameters:
@@ -151,5 +167,5 @@ def visualize_sample_repair(case=Variants.CASE1, parameters=None,
     real_process_net_viz = pn_visualizer.apply(real_net, real_init_marking, real_final_marking)
     pn_visualizer.save(real_process_net_viz, 'images/01-real_net.png')
 
-    return visualization_variants[variant.value](model_net, model_init_marking, model_final_marking,
+    return visualization_variants[algo](model_net, model_init_marking, model_final_marking,
                                           filtered_sim_log, parameters=parameters)

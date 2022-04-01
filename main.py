@@ -9,25 +9,26 @@ from conformance_analysis import finding_bad_pairs
 from utils import net_helpers
 from hammocks_covering.obj import Hammock
 from hammocks_covering.variants import minimal_hammock
-import net_repair.algorithm as net_repair_algo
 from pm4py.visualization.petri_net import visualizer as pn_visualizer
-from net_repair import algorithm as net_repair_algo
 
 # min_hammock.print_min_hammock()
 # min_hammock.print_min_hammock_pairs()
 # bad_pairs_hammocks_covering.visualize_sample_repair(mode=1)
 from pm4py.objects.petri_net.utils import check_soundness
 
+import net_repair.hammocks_replacement.algorithm as hammocks_replacement
+import net_repair.naive_log_only.algorithm as naive_log_only
+
 
 parameters = {
-    # net_repair_algo.Parameters.HAMMOCKS_REPLACEMENT_PREREPAIR_VARIANT: None
+    naive_log_only.Parameters.ALIGNMENTS_REPLACE_LOGONLY_WITH: naive_log_only.ReplaceLogonlyMode.MODEL_ONLY
 }
 
 # net, _, _ = bad_pairs_hammocks_covering.visualize_sample_repair(case=bad_pairs_hammocks_covering.Variants.CASE2, variant=net_repair_algo.Variants.NAIVE_LOG_ONLY)
+
+# bad_pairs_hammocks_covering.visualize_sample_repair(case=bad_pairs_hammocks_covering.Variants.CASE2, parameters=parameters, algo=naive_log_only)
 
 bad_pairs_hammocks_covering.visualize_sample_repair(case=bad_pairs_hammocks_covering.Variants.CASE2, parameters=parameters)
 
 # bad_pairs_hammocks_covering.visualize_sample_repair(case=bad_pairs_hammocks_covering.Variants.CASE2,
 #                                                     variant=net_repair_algo.Variants.NAIVE_LOG_ONLY)
-
-
