@@ -214,10 +214,11 @@ def apply(net: PetriNet, initial_marking, final_marking, log, alignments=None, p
     if prerepair_algo is None:
         if alignments is None:
             should_recalculate_alignments = True
-    elif prerepair_algo == PrerepairVariants.NAIVE_LOG_ONLY.value:
-        if parameters.get(naive_log_only_algo.Parameters.ALIGNMENTS_REPLACE_LOGONLY_WITH, naive_log_only_algo.DEFAULT_ALIGNMENTS_REPLACE_LOGONLY_WITH) is naive_log_only_algo.ReplaceLogonlyMode.NONE:
-            should_recalculate_alignments = True
-    # hardcode for each possible prerepair_variants (that's probably not the best solution)
+    else:
+        if prerepair_algo == PrerepairVariants.NAIVE_LOG_ONLY.value:
+            if parameters.get(naive_log_only_algo.Parameters.MODIFY_ALIGNMENTS_MODE, naive_log_only_algo.DEFAULT_MODIFY_ALIGNMENTS_MODE) is naive_log_only_algo.ModifyAlignments.NONE:
+                should_recalculate_alignments = True
+        # hardcode for each possible prerepair_variants (that's probably not the best solution)
 
     if should_recalculate_alignments:
         supress_logonly_in_alignments = exec_utils.get_param_value(Parameters.SUPRESS_LOGONLY_IN_ALIGNMENTS, parameters, True)

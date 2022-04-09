@@ -7,7 +7,6 @@ from visualization import net_visualize
 from pm4py.visualization.petri_net import visualizer as pn_visualizer
 from pm4py.visualization.petri_net.common import visualize
 from examples.test_net import Variants
-from net_repair import algorithm as net_repair_algo
 
 from pm4py.objects.petri_net.utils import petri_utils
 from pm4py.util import exec_utils
@@ -71,13 +70,18 @@ def visualize_hammocks_replacement_repair(net, init_marking, final_marking, log,
                                                           prerepaired_net_filename)
 
     should_recalculate_alignments = False
+    supress_logonly_in_alignments = exec_utils.get_param_value(
+        hammocks_replacement.Parameters.SUPRESS_LOGONLY_IN_ALIGNMENTS, parameters, True)
     if prerepair_variant is None:
         if alignments is None:
             should_recalculate_alignments = True
-    elif prerepair_variant == hammocks_replacement.PrerepairVariants.NAIVE_LOG_ONLY.value:
-        if parameters.get(naive_log_only.Parameters.ALIGNMENTS_REPLACE_LOGONLY_WITH,
-                          naive_log_only.DEFAULT_ALIGNMENTS_REPLACE_LOGONLY_WITH) is naive_log_only.ReplaceLogonlyMode.NONE:
-            should_recalculate_alignments = True
+    elif supress_logonly_in_alignments:
+        if prerepair_variant == hammocks_replacement.PrerepairVariants.NAIVE_LOG_ONLY.value:
+            if parameters.get(naive_log_only.Parameters.MODIFY_ALIGNMENTS_MODE,
+                              naive_log_only.DEFAULT_MODIFY_ALIGNMENTS_MODE) is naive_log_only.ModifyAlignments.NONE:
+                should_recalculate_alignments = True
+        # hardcode for each possible prerepair_variants (that's probably not the best solution)
+        
     if should_recalculate_alignments:
         print('alignments were recalculated')
         supress_logonly_in_alignments = exec_utils.get_param_value(hammocks_replacement.Parameters.SUPRESS_LOGONLY_IN_ALIGNMENTS, parameters, True)

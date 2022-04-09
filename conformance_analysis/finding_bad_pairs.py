@@ -63,6 +63,8 @@ def __find_bad_pairs(net: PetriNet, alignment, initial_marking, final_marking):
             # consume tokens
             for in_arc in fired_transition.in_arcs:
                 in_plc = in_arc.source
+                if not marking[in_plc]:
+                    error = 0
                 consumed_tokens.append(marking[in_plc].pop(0))
 
             # unite lists

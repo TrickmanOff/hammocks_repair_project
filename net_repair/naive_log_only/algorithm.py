@@ -12,16 +12,16 @@ from utils import net_helpers
 
 
 class Parameters(Enum):
-    ALIGNMENTS_REPLACE_LOGONLY_WITH = 'alignments_replace_logonly_with'  # from ReplaceLogonlyMode
+    MODIFY_ALIGNMENTS_MODE = 'modify_alignments_mode'  # from ModifyAlignments
 
 
-class ReplaceLogonlyMode(Enum):
+class ModifyAlignments(Enum):
     NONE = 'none'
-    SYNC = 'sync'
-    MODEL_ONLY = 'model_only'
+    LOG2SYNC = 'sync'
+    LOG2MODEL = 'model_only'
 
 
-DEFAULT_ALIGNMENTS_REPLACE_LOGONLY_WITH = ReplaceLogonlyMode.NONE
+DEFAULT_MODIFY_ALIGNMENTS_MODE = ModifyAlignments.NONE
 
 
 def get_log_only_moves_locations(net: PetriNet, initial_marking, final_marking, alignments) -> Dict[str, List[Tuple[Set, List]]]:
@@ -117,7 +117,7 @@ def apply(net: PetriNet, initial_marking, final_marking, log, alignments=None, p
 
     log_only_moves_locations = get_log_only_moves_locations(net, initial_marking, final_marking, alignments)
 
-    replace_logonly_mode = parameters.get(Parameters.ALIGNMENTS_REPLACE_LOGONLY_WITH, DEFAULT_ALIGNMENTS_REPLACE_LOGONLY_WITH)
+    replace_logonly_mode = parameters.get(Parameters.MODIFY_ALIGNMENTS_MODE, DEFAULT_MODIFY_ALIGNMENTS_MODE)
 
     for t_label, locations_with_alignments_moves in log_only_moves_locations.items():
         for location, alignments_moves in locations_with_alignments_moves:
@@ -127,19 +127,22 @@ def apply(net: PetriNet, initial_marking, final_marking, log, alignments=None, p
                 petri_utils.add_arc_from_to(transition, plc, net)
             for alignment, move_index in alignments_moves:
                 names, labels = alignment[move_index]
-                if replace_logonly_mode == ReplaceLogonlyMode.NONE:
+                if replace_logonly_mode == ModifyAlignments.NONE:
                     continue
-                elif replace_logonly_mode == ReplaceLogonlyMode.SYNC:
+                elif replace_logonly_mode == ModifyAlignments.LOG2SYNC:
                     alignment[move_index] = ((names[0], transition.name), (labels[0], t_label))  # labels[0] == t_label
-                elif replace_logonly_mode == ReplaceLogonlyMode.MODEL_ONLY:
+                elif replace_logonly_mode == ModifyAlignments.LOG2MODEL:
                     alignment[move_index] = ((None, transition.name), ('>>', t_label))
 
+    # duplicating the start position if it is a location of some added loop
     for st_plc in list(initial_marking.keys()):
         if st_plc.in_arcs:
             new_st_plc = petri_utils.add_place(net)
             removed_arcs = []
+            st_in_trans_names = []
             for in_arc in st_plc.in_arcs:
                 trans = in_arc.source
+                st_in_trans_names.append(trans.name)
                 out_arc = net_helpers.find_arc(st_plc.name, trans.name, net)
                 removed_arcs.append(out_arc)
                 petri_utils.add_arc_from_to(new_st_plc, trans, net)
@@ -150,6 +153,13 @@ def apply(net: PetriNet, initial_marking, final_marking, log, alignments=None, p
             petri_utils.add_arc_from_to(new_st_plc, hidden_trans, net)
             petri_utils.add_arc_from_to(hidden_trans, st_plc, net)
 
+            for alignment_info in alignments:
+                alignment = alignment_info['alignment']
+                names = alignment[0][0]
+
+                if names[1] not in st_in_trans_names and names[1] != hidden_trans.name:
+                    alignment.insert(0, ((None, hidden_trans.name), ('>>', None)))
+
             initial_marking[new_st_plc] = initial_marking[st_plc]
             del initial_marking[st_plc]
 
@@ -157,8 +167,10 @@ def apply(net: PetriNet, initial_marking, final_marking, log, alignments=None, p
         if end_plc.out_arcs:
             new_end_plc = petri_utils.add_place(net)
             removed_arcs = []
+            end_out_trans_names = []
             for out_arc in end_plc.out_arcs:
                 trans = out_arc.target
+                end_out_trans_names.append(trans.name)
                 in_arc = net_helpers.find_arc(trans.name, end_plc.name, net)
                 removed_arcs.append(in_arc)
                 petri_utils.add_arc_from_to(trans, new_end_plc, net)
@@ -168,6 +180,13 @@ def apply(net: PetriNet, initial_marking, final_marking, log, alignments=None, p
             hidden_trans = petri_utils.add_transition(net)
             petri_utils.add_arc_from_to(end_plc, hidden_trans, net)
             petri_utils.add_arc_from_to(hidden_trans, new_end_plc, net)
+
+            for alignment_info in alignments:
+                alignment = alignment_info['alignment']
+                names = alignment[-1][0]
+
+                if names[1] not in end_out_trans_names and names[1] != hidden_trans.name:
+                    alignment.append(((None, hidden_trans.name), ('>>', None)))
 
             final_marking[new_end_plc] = final_marking[end_plc]
             del final_marking[end_plc]
