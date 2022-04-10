@@ -67,18 +67,29 @@ def discover_subprocess(hammock: Hammock, log, parameters):
 
     df = converter.apply(log, variant=converter.Variants.TO_DATA_FRAME)
     hammock_activities_labels = {node.label for node in hammock.nodes if isinstance(node, PetriNet.Transition) and node.label is not None}
-    # what if empty?
+    # don't forget about empty subtraces
     filtered_df = df[df['concept:name'].isin(hammock_activities_labels)]
 
-    miner_algo = exec_utils.get_param_value(Parameters.SUBPROCESS_MINER_ALGO, parameters, DEFAULT_SUBPROCESS_MINER_ALGO)
-    miner_algo_variant = exec_utils.get_param_value(Parameters.SUBPROCESS_MINER_ALGO_VARIANT, parameters, DEFAULT_SUBPROCESS_MINER_ALGO_VARIANT)
-    if miner_algo_variant is None:
-        net, _, _ = miner_algo.apply(filtered_df, parameters=parameters)
+    is_empty_subtrace = df['case:concept:name'].nunique() > filtered_df['case:concept:name'].nunique()
+    if len(filtered_df) == 0:  # what if filtered log is empty?
+        net = PetriNet()
+        net_source = petri_utils.add_place(net)
+        net_sink = petri_utils.add_place(net)
     else:
-        net, _, _ = miner_algo.apply(filtered_df, variant=miner_algo_variant, parameters=parameters)
+        miner_algo = exec_utils.get_param_value(Parameters.SUBPROCESS_MINER_ALGO, parameters, DEFAULT_SUBPROCESS_MINER_ALGO)
+        miner_algo_variant = exec_utils.get_param_value(Parameters.SUBPROCESS_MINER_ALGO_VARIANT, parameters, DEFAULT_SUBPROCESS_MINER_ALGO_VARIANT)
+        if miner_algo_variant is None:
+            net, _, _ = miner_algo.apply(filtered_df, parameters=parameters)
+        else:
+            net, _, _ = miner_algo.apply(filtered_df, variant=miner_algo_variant, parameters=parameters)
 
-    net_source = check_soundness.check_source_place_presence(net)
-    net_sink = check_soundness.check_sink_place_presence(net)
+        net_source = check_soundness.check_source_place_presence(net)
+        net_sink = check_soundness.check_sink_place_presence(net)
+
+    if is_empty_subtrace:
+        hidden_trans = petri_utils.add_transition(net)
+        petri_utils.add_arc_from_to(net_source, hidden_trans, net)
+        petri_utils.add_arc_from_to(hidden_trans, net_sink, net)
 
     net_source.name = 'hammock_src_' + str(time.time())
     net_sink.name = 'hammock_sink_' + str(time.time())
@@ -103,7 +114,6 @@ def replace_hammock(net: PetriNet, initial_marking, final_marking, hammock: Hamm
     '''
     replaces the `hammock` with the `subprocess_net` in the `net`
     '''
-
     if isinstance(hammock.source, PetriNet.Transition):
         if len(subprocess_source.out_arcs) == 1:
             for out_arc in subprocess_source.out_arcs:
