@@ -13,12 +13,12 @@ class MyToken:
 
 def format_alignment(alignment):
     '''
-    'log': labels
+    'log.xes': labels
     'model': (label, name)
     '''
     log_steps = [labels[0] for names, labels in alignment]
     model_steps = [(labels[1], names[1]) for names, labels in alignment]
-    data = {'log': log_steps, 'model': model_steps}
+    data = {'log.xes': log_steps, 'model': model_steps}
     return data
 
 
@@ -53,7 +53,7 @@ def __find_bad_pairs(net: PetriNet, alignment, initial_marking, final_marking):
 
     for i in range(len(alignment['model'])):
         model_label, model_name = alignment['model'][i]
-        log_label = alignment['log'][i]
+        log_label = alignment['log.xes'][i]
 
         if model_label != '>>':  # fired transition
             # find transition
@@ -63,8 +63,6 @@ def __find_bad_pairs(net: PetriNet, alignment, initial_marking, final_marking):
             # consume tokens
             for in_arc in fired_transition.in_arcs:
                 in_plc = in_arc.source
-                if not marking[in_plc]:
-                    error = 0
                 consumed_tokens.append(marking[in_plc].pop(0))
 
             # unite lists
@@ -93,7 +91,7 @@ def __find_bad_pairs(net: PetriNet, alignment, initial_marking, final_marking):
                 out_plc = out_arc.target
                 marking[out_plc].append(copy(union_token))
 
-        else:  # log-only move
+        else:  # log.xes-only move
             pass
 
     end_places = {place for place, cnt in final_marking.items()}
@@ -109,7 +107,7 @@ def __find_bad_pairs(net: PetriNet, alignment, initial_marking, final_marking):
 def find_bad_pairs(net: PetriNet, initial_marking, final_marking, aligned_traces):
     '''
     :param aligned_traces:
-        the result of applying the alignments algo to the `log` and `net`
+        the result of applying the alignments algo to the `log.xes` and `net`
     :return
         dict with elements {(t1, t2): count},
         where (t1, t2) is a bad pair of transitions or start/end places

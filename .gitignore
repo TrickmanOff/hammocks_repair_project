@@ -2,4 +2,6 @@
 __pycache__/
 .DS_Store
 tmp.txt
-
+*.png
+grader/tests
+images

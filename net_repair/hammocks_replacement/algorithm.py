@@ -71,7 +71,7 @@ def discover_subprocess(hammock: Hammock, log, parameters):
     filtered_df = df[df['concept:name'].isin(hammock_activities_labels)]
 
     is_empty_subtrace = df['case:concept:name'].nunique() > filtered_df['case:concept:name'].nunique()
-    if len(filtered_df) == 0:  # what if filtered log is empty?
+    if len(filtered_df) == 0:  # what if filtered log.xes is empty?
         net = PetriNet()
         net_source = petri_utils.add_place(net)
         net_sink = petri_utils.add_place(net)
@@ -113,7 +113,11 @@ def replace_hammock(net: PetriNet, initial_marking, final_marking, hammock: Hamm
                     subprocess_net: PetriNet, subprocess_source, subprocess_sink):
     '''
     replaces the `hammock` with the `subprocess_net` in the `net`
+
+    Note that collisions between the names of nodes in the subprocess net and the net with hammocks are possible, so
+    don't forget to call enumerate_nodes_successively()
     '''
+
     if isinstance(hammock.source, PetriNet.Transition):
         if len(subprocess_source.out_arcs) == 1:
             for out_arc in subprocess_source.out_arcs:
@@ -167,6 +171,15 @@ def replace_hammock(net: PetriNet, initial_marking, final_marking, hammock: Hamm
         net_helpers.remove_node(net, node)
 
     return net, initial_marking, final_marking
+
+
+def enumerate_nodes_successively(net):
+    for i, place in enumerate(net.places):
+        place.name = 'p_' + str(i + 1)
+    for i, trans in enumerate(net.transitions):
+        trans.name = 't_' + str(i + 1)
+
+    return net
 
 
 def use_custom_cost_function(net, alignments, parameters):
@@ -241,5 +254,6 @@ def apply(net: PetriNet, initial_marking, final_marking, log, alignments=None, p
     for hammock in hammocks:
         subproc_net, subproc_src, subproc_sink = discover_subprocess(hammock, log, parameters)
         replace_hammock(net, initial_marking, final_marking, hammock, subproc_net, subproc_src, subproc_sink)
+    enumerate_nodes_successively(net)
 
     return net, initial_marking, final_marking

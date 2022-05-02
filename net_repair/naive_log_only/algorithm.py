@@ -28,7 +28,7 @@ def get_log_only_moves_locations(net: PetriNet, initial_marking, final_marking, 
     '''
     :return:
     t_label -> [
-      (location - set of places, corresponding log-only moves in the alignments),
+      (location - set of places, corresponding log.xes-only moves in the alignments),
       ...
     ]
     '''
@@ -47,7 +47,7 @@ def get_log_only_moves_locations(net: PetriNet, initial_marking, final_marking, 
             model_label = labels[1]
             log_label = labels[0]
 
-            if model_label == '>>':  # log-only move
+            if model_label == '>>':  # log.xes-only move
                 if log_label not in log_only_moves_markings:
                     log_only_moves_markings[log_label] = {}
                 marking_key = frozenset(marking)

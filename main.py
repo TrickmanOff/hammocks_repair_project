@@ -11,6 +11,8 @@ from hammocks_covering.obj import Hammock
 from hammocks_covering.variants import minimal_hammock
 from pm4py.visualization.petri_net import visualizer as pn_visualizer
 
+from grader import test_gen
+
 # min_hammock.print_min_hammock()
 # min_hammock.print_min_hammock_pairs()
 # bad_pairs_hammocks_covering.visualize_sample_repair(mode=1)
@@ -23,50 +25,18 @@ import net_repair.hammocks_replacement.algorithm as hammocks_replacement
 import net_repair.naive_log_only.algorithm as naive_log_only
 import numpy as np
 
-
-def select_random_sublog(log, select_ratio):
-    log_sz = len(log)
-    perm = np.random.permutation(log_sz)
-
-    cases_names = set()
-    for i in range(int(select_ratio * log_sz)):
-        cases_names.add(log[perm[i]].attributes['concept:name'])
-
-    df_log = pm4py.convert_to_dataframe(log)
-    mask = df_log['case:concept:name'].isin(cases_names)
-
-    return pm4py.convert_to_event_log(df_log[mask])
+from grader import grader
 
 
-log_path = '/Volumes/Samsung_T5/project/data/BPM2013benchmarks/prAm6.xes'
-log = xes_importer.apply(log_path)
+def grader_example():
+    parameters = {
+        hammocks_replacement.Parameters.PREREPAIR_VARIANT: hammocks_replacement.PrerepairVariants.NAIVE_LOG_ONLY,
+        hammocks_replacement.Parameters.SUPRESS_LOGONLY_IN_ALIGNMENTS: False,
+        naive_log_only.Parameters.MODIFY_ALIGNMENTS_MODE: naive_log_only.ModifyAlignments.LOG2SYNC,
+    }
 
-sublog = select_random_sublog(log, 0.2)
-net, initial_marking, final_marking = inductive_miner.apply(sublog)
+    test_dirs = ['/Users/trickman/PycharmProjects/hammocks_repair/grader/tests/sample2']
 
-# pn_path = '/Volumes/Samsung_T5/project/data/Process_Discovery_Contest_2020/Models/pdc_2020_1111100.pnml'
-# net, initial_marking, final_marking = pnml_importer.apply(pn_path)
-
-pn_visualizer.save(pn_visualizer.apply(net, initial_marking, final_marking), 'images/base_net.png')
-
-check_sublog = select_random_sublog(log, 0.3)
-# check_sublog = log
-
-
-parameters = {
-    hammocks_replacement.Parameters.PREREPAIR_VARIANT: hammocks_replacement.PrerepairVariants.NAIVE_LOG_ONLY,
-    hammocks_replacement.Parameters.SUPRESS_LOGONLY_IN_ALIGNMENTS: False,
-    naive_log_only.Parameters.MODIFY_ALIGNMENTS_MODE: naive_log_only.ModifyAlignments.LOG2SYNC,
-}
-
-bad_pairs_hammocks_covering.visualize_hammocks_replacement_repair(net, initial_marking, final_marking, check_sublog, parameters=parameters)
-exit(0)
-
-# net, _, _ = bad_pairs_hammocks_covering.visualize_sample_repair(case=bad_pairs_hammocks_covering.Variants.CASE2, variant=net_repair_algo.Variants.NAIVE_LOG_ONLY)
-
-# bad_pairs_hammocks_covering.visualize_sample_repair(case=bad_pairs_hammocks_covering.Variants.CASE2, parameters=parameters, algo=naive_log_only)
-
-bad_pairs_hammocks_covering.visualize_sample_repair(case=bad_pairs_hammocks_covering.Variants.CASE2, parameters=parameters)
-
-# bad_pairs_hammocks_covering.visualize_sample_repair(case=bad_pairs_hammocks_covering.Variants.CASE2,
-#                                                     variant=net_repair_algo.Variants.NAIVE_LOG_ONLY)
+    grader.apply_complete_rediscovery(test_dirs)
+    grader.apply_hammocks_repair(test_dirs, parameters=parameters)
+    grader.grade(test_dirs, forced_grade=True)
