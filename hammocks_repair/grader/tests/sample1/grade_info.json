@@ -1,0 +1,26 @@
+{
+    "default_hammocks_replacement": {
+        "time": {
+            "alignments": 0.37,
+            "prerepair": 0.47,
+            "hammocks_replacement": 0.28
+        },
+        "alignments": {
+            "log_only_moves_before_prerepair": 0,
+            "model_only_moves_before_prerepair": 1515,
+            "log_only_moves_after_prerepair": 0,
+            "model_only_moves_after_prerepair": 1515
+        },
+        "fitness": {
+            "perc_fit_traces": 100.0,
+            "avg_trace_fitness": 1.0
+        },
+        "graph_edit_similarity": {
+            "to_perfect": 0.49,
+            "to_given": 0.465
+        },
+        "grader_data": {
+            "grade_time": 16496820456966240
+        }
+    }
+}

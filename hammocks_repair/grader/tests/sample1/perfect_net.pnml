@@ -1,0 +1,275 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<pnml>
+  <net id="net1" type="http://www.pnml.org/version-2009/grammar/pnmlcoremodel">
+    <page id="n0">
+      <place id="p17">
+        <name>
+          <text>p17</text>
+        </name>
+      </place>
+      <place id="p3">
+        <name>
+          <text>p3</text>
+        </name>
+      </place>
+      <place id="p7">
+        <name>
+          <text>p7</text>
+        </name>
+      </place>
+      <place id="p13">
+        <name>
+          <text>p13</text>
+        </name>
+      </place>
+      <place id="p1">
+        <name>
+          <text>p1</text>
+        </name>
+      </place>
+      <place id="p16">
+        <name>
+          <text>p16</text>
+        </name>
+      </place>
+      <place id="p2">
+        <name>
+          <text>p2</text>
+        </name>
+      </place>
+      <place id="p6">
+        <name>
+          <text>p6</text>
+        </name>
+      </place>
+      <place id="p12">
+        <name>
+          <text>p12</text>
+        </name>
+      </place>
+      <place id="start">
+        <name>
+          <text>start</text>
+        </name>
+        <initialMarking>
+          <text>1</text>
+        </initialMarking>
+      </place>
+      <place id="p15">
+        <name>
+          <text>p15</text>
+        </name>
+      </place>
+      <place id="end">
+        <name>
+          <text>end</text>
+        </name>
+      </place>
+      <place id="p5">
+        <name>
+          <text>p5</text>
+        </name>
+      </place>
+      <place id="p9">
+        <name>
+          <text>p9</text>
+        </name>
+      </place>
+      <place id="p11">
+        <name>
+          <text>p11</text>
+        </name>
+      </place>
+      <place id="p14">
+        <name>
+          <text>p14</text>
+        </name>
+      </place>
+      <place id="p4">
+        <name>
+          <text>p4</text>
+        </name>
+      </place>
+      <place id="p8">
+        <name>
+          <text>p8</text>
+        </name>
+      </place>
+      <place id="p10">
+        <name>
+          <text>p10</text>
+        </name>
+      </place>
+      <transition id="inspect_t">
+        <name>
+          <text>inspect</text>
+        </name>
+      </transition>
+      <transition id="1st_vendor_t">
+        <name>
+          <text>1st vendor</text>
+        </name>
+      </transition>
+      <transition id="repair_finished_t">
+        <name>
+          <text>repair finished</text>
+        </name>
+      </transition>
+      <transition id="troubles_with_client_t">
+        <name>
+          <text>troubles with client</text>
+        </name>
+      </transition>
+      <transition id="admit_helplessness_hidden_t">
+        <name>
+          <text>admit_helplessness_hidden_t</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="f43b59fb-34d8-4a3f-b207-11368c33f5fc"/>
+      </transition>
+      <transition id="finished_order_hidden_t">
+        <name>
+          <text>finished_order_hidden_t</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="10a7680a-c505-41a5-af8d-62d26d060a2c"/>
+      </transition>
+      <transition id="take_device_t">
+        <name>
+          <text>take device</text>
+        </name>
+      </transition>
+      <transition id="order_parts_t">
+        <name>
+          <text>order parts</text>
+        </name>
+      </transition>
+      <transition id="test_repair_t">
+        <name>
+          <text>test repair</text>
+        </name>
+      </transition>
+      <transition id="client_didnt_come_t">
+        <name>
+          <text>client didnt come</text>
+        </name>
+      </transition>
+      <transition id="sell_device_t">
+        <name>
+          <text>sell device</text>
+        </name>
+      </transition>
+      <transition id="no_parts_hidden_t">
+        <name>
+          <text>no_parts_hidden_t</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="a4c1be4c-5422-4405-846e-9740db68a0e8"/>
+      </transition>
+      <transition id="start_repair_t">
+        <name>
+          <text>start repair</text>
+        </name>
+      </transition>
+      <transition id="complete_repair_t">
+        <name>
+          <text>complete repair</text>
+        </name>
+      </transition>
+      <transition id="court_t">
+        <name>
+          <text>court</text>
+        </name>
+      </transition>
+      <transition id="client_came_t">
+        <name>
+          <text>client came</text>
+        </name>
+      </transition>
+      <transition id="no_2nd_vendor_hidden_t">
+        <name>
+          <text>no_2nd_vendor_hidden_t</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="c2ea0941-e1a3-423d-9ee7-d28ce6d952e0"/>
+      </transition>
+      <transition id="add_to_the_db_t">
+        <name>
+          <text>add to the db</text>
+        </name>
+      </transition>
+      <transition id="2nd_vendor_t">
+        <name>
+          <text>2nd vendor</text>
+        </name>
+      </transition>
+      <transition id="received_payment_t">
+        <name>
+          <text>received payment</text>
+        </name>
+      </transition>
+      <transition id="no_1st_vendor_hidden_t">
+        <name>
+          <text>no_1st_vendor_hidden_t</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="0e97cc90-6359-4e97-9ccd-6224704b0e01"/>
+      </transition>
+      <transition id="inform_client_t">
+        <name>
+          <text>inform client</text>
+        </name>
+      </transition>
+      <arc id="4895890688" source="p2" target="admit_helplessness_hidden_t"/>
+      <arc id="4895891072" source="p6" target="order_parts_t"/>
+      <arc id="4895928576" source="p9" target="test_repair_t"/>
+      <arc id="4895928960" source="p13" target="inform_client_t"/>
+      <arc id="4895929344" source="p16" target="troubles_with_client_t"/>
+      <arc id="4895929728" source="take_device_t" target="p4"/>
+      <arc id="4895930112" source="start_repair_t" target="p6"/>
+      <arc id="4895930496" source="no_1st_vendor_hidden_t" target="p10"/>
+      <arc id="4895930880" source="finished_order_hidden_t" target="p17"/>
+      <arc id="4895931264" source="inform_client_t" target="p14"/>
+      <arc id="4895931552" source="troubles_with_client_t" target="p3"/>
+      <arc id="4895931072" source="test_repair_t" target="p12"/>
+      <arc id="4895890592" source="p2" target="start_repair_t"/>
+      <arc id="4895890976" source="p5" target="repair_finished_t"/>
+      <arc id="4895928480" source="p8" target="no_2nd_vendor_hidden_t"/>
+      <arc id="4895928864" source="p12" target="repair_finished_t"/>
+      <arc id="4895891360" source="p7" target="no_1st_vendor_hidden_t"/>
+      <arc id="4895929248" source="p15" target="sell_device_t"/>
+      <arc id="4895929632" source="take_device_t" target="p1"/>
+      <arc id="4895930016" source="admit_helplessness_hidden_t" target="p12"/>
+      <arc id="4895930400" source="1st_vendor_t" target="p10"/>
+      <arc id="4895930784" source="no_parts_hidden_t" target="p17"/>
+      <arc id="4895931456" source="client_didnt_come_t" target="p15"/>
+      <arc id="4895931840" source="court_t" target="end"/>
+      <arc id="4895931360" source="client_came_t" target="p16"/>
+      <arc id="4895890496" source="p1" target="inspect_t"/>
+      <arc id="4895890880" source="p4" target="add_to_the_db_t"/>
+      <arc id="4895891264" source="p7" target="1st_vendor_t"/>
+      <arc id="4895928384" source="p8" target="2nd_vendor_t"/>
+      <arc id="4895928768" source="p11" target="finished_order_hidden_t"/>
+      <arc id="4895929152" source="p14" target="client_didnt_come_t"/>
+      <arc id="4895929536" source="p17" target="complete_repair_t"/>
+      <arc id="4895929920" source="add_to_the_db_t" target="p5"/>
+      <arc id="4895930304" source="order_parts_t" target="p8"/>
+      <arc id="4895930688" source="no_2nd_vendor_hidden_t" target="p11"/>
+      <arc id="4895931744" source="sell_device_t" target="end"/>
+      <arc id="4895890400" source="start" target="take_device_t"/>
+      <arc id="4895890784" source="p3" target="court_t"/>
+      <arc id="4895891168" source="p6" target="no_parts_hidden_t"/>
+      <arc id="4895928672" source="p10" target="finished_order_hidden_t"/>
+      <arc id="4895929056" source="p14" target="client_came_t"/>
+      <arc id="4895929440" source="p16" target="received_payment_t"/>
+      <arc id="4895929824" source="inspect_t" target="p2"/>
+      <arc id="4895930208" source="order_parts_t" target="p7"/>
+      <arc id="4895930592" source="2nd_vendor_t" target="p11"/>
+      <arc id="4895930976" source="complete_repair_t" target="p9"/>
+      <arc id="4895931648" source="received_payment_t" target="end"/>
+      <arc id="4895931168" source="repair_finished_t" target="p13"/>
+    </page>
+    <finalmarkings>
+      <marking>
+        <place idref="end">
+          <text>1</text>
+        </place>
+      </marking>
+    </finalmarkings>
+  </net>
+</pnml>

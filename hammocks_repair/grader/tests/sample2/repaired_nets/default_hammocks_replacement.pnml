@@ -1,0 +1,275 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<pnml>
+  <net id="net1" type="http://www.pnml.org/version-2009/grammar/pnmlcoremodel">
+    <page id="n0">
+      <place id="p_1">
+        <name>
+          <text>p4</text>
+        </name>
+      </place>
+      <place id="p_2">
+        <name>
+          <text>p_2</text>
+        </name>
+      </place>
+      <place id="p_3">
+        <name>
+          <text>p_3</text>
+        </name>
+      </place>
+      <place id="p_4">
+        <name>
+          <text>start</text>
+        </name>
+        <initialMarking>
+          <text>1</text>
+        </initialMarking>
+      </place>
+      <place id="p_5">
+        <name>
+          <text>p_5</text>
+        </name>
+      </place>
+      <place id="p_6">
+        <name>
+          <text>p_6</text>
+        </name>
+      </place>
+      <place id="p_7">
+        <name>
+          <text>p_7</text>
+        </name>
+      </place>
+      <place id="p_8">
+        <name>
+          <text>p_8</text>
+        </name>
+      </place>
+      <place id="p_9">
+        <name>
+          <text>p_9</text>
+        </name>
+      </place>
+      <place id="p_10">
+        <name>
+          <text>p_10</text>
+        </name>
+      </place>
+      <place id="p_11">
+        <name>
+          <text>p5</text>
+        </name>
+      </place>
+      <place id="p_12">
+        <name>
+          <text>p_12</text>
+        </name>
+      </place>
+      <place id="p_13">
+        <name>
+          <text>p_13</text>
+        </name>
+      </place>
+      <place id="p_14">
+        <name>
+          <text>p_14</text>
+        </name>
+      </place>
+      <place id="p_15">
+        <name>
+          <text>p1</text>
+        </name>
+      </place>
+      <place id="p_16">
+        <name>
+          <text>p_16</text>
+        </name>
+      </place>
+      <place id="p_17">
+        <name>
+          <text>p_17</text>
+        </name>
+      </place>
+      <place id="p_18">
+        <name>
+          <text>p13</text>
+        </name>
+      </place>
+      <transition id="t_1">
+        <name>
+          <text>add to the db</text>
+        </name>
+      </transition>
+      <transition id="t_2">
+        <name>
+          <text>t_2</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="7901eec8-bc42-4af2-9e5e-72f7e2c0036e"/>
+      </transition>
+      <transition id="t_3">
+        <name>
+          <text>troubles with client</text>
+        </name>
+      </transition>
+      <transition id="t_4">
+        <name>
+          <text>court</text>
+        </name>
+      </transition>
+      <transition id="t_5">
+        <name>
+          <text>inspect</text>
+        </name>
+      </transition>
+      <transition id="t_6">
+        <name>
+          <text>start repair</text>
+        </name>
+      </transition>
+      <transition id="t_7">
+        <name>
+          <text>t_7</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="ebde8800-2afc-4180-b557-8028eb5343c3"/>
+      </transition>
+      <transition id="t_8">
+        <name>
+          <text>inform client</text>
+        </name>
+      </transition>
+      <transition id="t_9">
+        <name>
+          <text>complete repair</text>
+        </name>
+      </transition>
+      <transition id="t_10">
+        <name>
+          <text>t_10</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="4897ef10-871e-4e00-ac7c-f7b3f4a548c6"/>
+      </transition>
+      <transition id="t_11">
+        <name>
+          <text>sell device</text>
+        </name>
+      </transition>
+      <transition id="t_12">
+        <name>
+          <text>client didnt come</text>
+        </name>
+      </transition>
+      <transition id="t_13">
+        <name>
+          <text>received payment</text>
+        </name>
+      </transition>
+      <transition id="t_14">
+        <name>
+          <text>take device</text>
+        </name>
+      </transition>
+      <transition id="t_15">
+        <name>
+          <text>2nd vendor</text>
+        </name>
+      </transition>
+      <transition id="t_16">
+        <name>
+          <text>1st vendor</text>
+        </name>
+      </transition>
+      <transition id="t_17">
+        <name>
+          <text>t_17</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="a404951e-cdd3-4d3b-a69f-fec3b1a7a885"/>
+      </transition>
+      <transition id="t_18">
+        <name>
+          <text>repair finished</text>
+        </name>
+      </transition>
+      <transition id="t_19">
+        <name>
+          <text>order parts</text>
+        </name>
+      </transition>
+      <transition id="t_20">
+        <name>
+          <text>t_20</text>
+        </name>
+        <toolspecific tool="ProM" version="6.4" activity="$invisible$" localNodeID="4677532d-e877-4905-8fec-d93d7316623d"/>
+      </transition>
+      <transition id="t_21">
+        <name>
+          <text>2nd vendor</text>
+        </name>
+      </transition>
+      <transition id="t_22">
+        <name>
+          <text>test repair</text>
+        </name>
+      </transition>
+      <transition id="t_23">
+        <name>
+          <text>client came</text>
+        </name>
+      </transition>
+      <arc id="4733660416" source="t_1" target="p_11"/>
+      <arc id="4733659648" source="p_5" target="t_7"/>
+      <arc id="4734112768" source="p_13" target="t_9"/>
+      <arc id="4733809424" source="t_14" target="p_1"/>
+      <arc id="4734112528" source="p_14" target="t_22"/>
+      <arc id="4732575504" source="t_3" target="p_10"/>
+      <arc id="4732575264" source="p_17" target="t_13"/>
+      <arc id="4733811488" source="p_1" target="t_1"/>
+      <arc id="4732573728" source="p_10" target="t_4"/>
+      <arc id="4732574496" source="t_13" target="p_6"/>
+      <arc id="4732699168" source="t_8" target="p_9"/>
+      <arc id="4734113584" source="t_17" target="p_16"/>
+      <arc id="4733809712" source="p_11" target="t_18"/>
+      <arc id="4733810480" source="p_11" target="t_15"/>
+      <arc id="4733658160" source="p_7" target="t_16"/>
+      <arc id="4732573488" source="t_11" target="p_6"/>
+      <arc id="4732571952" source="t_23" target="p_17"/>
+      <arc id="4734112576" source="t_10" target="p_2"/>
+      <arc id="4732572480" source="p_2" target="t_23"/>
+      <arc id="4732699216" source="p_12" target="t_20"/>
+      <arc id="4733812304" source="p_1" target="t_21"/>
+      <arc id="4733657680" source="t_7" target="p_7"/>
+      <arc id="4319651920" source="t_5" target="p_12"/>
+      <arc id="4733659984" source="t_16" target="p_13"/>
+      <arc id="4733808992" source="p_18" target="t_8"/>
+      <arc id="4733660512" source="p_5" target="t_19"/>
+      <arc id="4732574304" source="p_17" target="t_3"/>
+      <arc id="4732572768" source="t_4" target="p_6"/>
+      <arc id="4733808752" source="p_15" target="t_5"/>
+      <arc id="4733812592" source="t_14" target="p_15"/>
+      <arc id="4733810288" source="p_4" target="t_14"/>
+      <arc id="4734112624" source="t_12" target="p_3"/>
+      <arc id="4734114688" source="t_20" target="p_8"/>
+      <arc id="4733812112" source="t_18" target="p_18"/>
+      <arc id="4734114976" source="p_2" target="t_12"/>
+      <arc id="4734112672" source="t_9" target="p_14"/>
+      <arc id="4734114208" source="t_22" target="p_8"/>
+      <arc id="4733809328" source="t_15" target="p_11"/>
+      <arc id="4733658544" source="p_7" target="t_2"/>
+      <arc id="4734113200" source="p_6" target="t_17"/>
+      <arc id="4734115504" source="p_3" target="t_11"/>
+      <arc id="4733484240" source="p_12" target="t_6"/>
+      <arc id="4733658064" source="t_6" target="p_5"/>
+      <arc id="4733660368" source="t_2" target="p_13"/>
+      <arc id="4733810144" source="t_21" target="p_1"/>
+      <arc id="4733660128" source="t_19" target="p_7"/>
+      <arc id="4733812208" source="p_8" target="t_18"/>
+      <arc id="4734113776" source="p_9" target="t_10"/>
+    </page>
+    <finalmarkings>
+      <marking>
+        <place idref="p_16">
+          <text>1</text>
+        </place>
+      </marking>
+    </finalmarkings>
+  </net>
+</pnml>

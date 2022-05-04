@@ -1,0 +1,73 @@
+{
+    "default_hammocks_replacement": {
+        "time": {
+            "alignments": 122.06,
+            "prerepair": 9.89,
+            "hammocks_replacement": 4.76
+        },
+        "alignments": {
+            "log_only_moves_before_prerepair": 42,
+            "model_only_moves_before_prerepair": 5,
+            "log_only_moves_after_prerepair": 0,
+            "model_only_moves_after_prerepair": 5
+        },
+        "fitness": {
+            "perc_fit_traces": 100.0,
+            "avg_trace_fitness": 1.0
+        },
+        "graph_edit_similarity": {
+            "to_perfect": 0.49,
+            "to_given": 0.48
+        },
+        "grader_data": {
+            "grade_time": 16503961977788362
+        },
+        "precision": {
+            "precision": 0.146
+        },
+        "net_stats": {
+            "places_cnt": 344,
+            "trans_cnt": 423
+        }
+    },
+    "complete_rediscovery": {
+        "time": {
+            "total_time": 7.06
+        },
+        "fitness": {
+            "perc_fit_traces": 100.0,
+            "avg_trace_fitness": 1.0
+        },
+        "graph_edit_similarity": {
+            "to_perfect": 0.5,
+            "to_given": 0.494
+        },
+        "grader_data": {
+            "grade_time": 16503960325309976
+        },
+        "precision": {
+            "precision": 0.145
+        },
+        "net_stats": {
+            "places_cnt": 338,
+            "trans_cnt": 412
+        }
+    },
+    "given_net": {
+        "net_stats": {
+            "places_cnt": 353,
+            "trans_cnt": 424
+        }
+    },
+    "perfect_net": {
+        "net_stats": {
+            "places_cnt": 337,
+            "trans_cnt": 409
+        }
+    },
+    "log": {
+        "log_stats": {
+            "traces_cnt": 360
+        }
+    }
+}
