@@ -3,5 +3,5 @@ __pycache__/
 .DS_Store
 tmp.txt
 *.png
-grader/tests
+hammocks_repair/grader/tests
 images

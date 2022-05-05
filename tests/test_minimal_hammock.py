@@ -124,6 +124,7 @@ class MinimalHammockTest(unittest.TestCase):
         net_src = net_helpers.get_place_by_name(net, 'start')
         net_sink = net_helpers.get_place_by_name(net, 'end')
 
+        # case 1
         covered_nodes_names = ['p1', 'p3']
 
         parameters = {
@@ -131,8 +132,7 @@ class MinimalHammockTest(unittest.TestCase):
             Parameters.PARAM_SINK_NODE_TYPE: NodeTypes.PLACE_TYPE | NodeTypes.NOT_HIDDEN_TRANS_TYPE | NodeTypes.HIDDEN_TRANS_TYPE,
         }
 
-        true_hammock_nodes_names = ['b_t', 'c_t', 'd_t']
-        true_hammock_nodes_names += ['p1', 'p2', 'p3']
+        true_hammock_nodes_names = ['b_t', 'c_t', 'd_t', 'e_t', 'f_t'] + ['p1', 'p2', 'p3', 'p4']
         true_hammock_source_name = 'p1'
         true_hammock_sink_name = 'd_t'
 
@@ -142,6 +142,14 @@ class MinimalHammockTest(unittest.TestCase):
         res_hammock = minimal_hammock.apply(covered_nodes, net_src, net_sink, parameters=parameters)
 
         self.assertEqual(true_hammock, res_hammock)
+
+
+        # case 2: sink = source
+        covered_nodes_names = ['p2', 'p4']
+
+        covered_nodes = _get_nodes_by_names(net, covered_nodes_names)
+        res_hammock = minimal_hammock.apply(covered_nodes, net_src, net_sink, parameters=parameters)
+        dbg = 0
 
 
 if __name__ == '__main__':

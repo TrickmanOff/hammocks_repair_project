@@ -140,8 +140,9 @@ def apply(covered_nodes: Iterable[Union[PetriNet.Place, PetriNet.Transition]],
     black = set()
     gray = set()
     new_nodes = copy(covered_nodes)
+    ham_src = ham_sink = None
 
-    while gray or new_nodes:
+    while new_nodes:
         # step 1
         new_src_ind = src_ind
         new_sink_ind = sink_ind
@@ -156,8 +157,12 @@ def apply(covered_nodes: Iterable[Union[PetriNet.Place, PetriNet.Transition]],
                 new_src_ind = max(new_src_ind, pos_in_path[SRC][u])
             if u in path_to_set[SINK]:
                 new_sink_ind = max(new_sink_ind, pos_in_path[SINK][u])
+
+        ham_src = path_to[SRC][new_src_ind]
+        ham_sink = path_to[SINK][new_sink_ind]
+
         for u in new_nodes:
-            if u != path_to[SRC][new_src_ind] and u != path_to[SINK][new_sink_ind]:
+            if u != ham_src and u != ham_sink:
                 gray.add(u)
         new_nodes.clear()
 
@@ -165,22 +170,26 @@ def apply(covered_nodes: Iterable[Union[PetriNet.Place, PetriNet.Transition]],
         if new_src_ind != src_ind:
             for i in range(max(0, src_ind), new_src_ind):
                 gray.add(path_to[SRC][i])
-            new_nodes.update(_out_neighbors(path_to[SRC][new_src_ind]))
+            if ham_src != ham_sink:
+                for u in _out_neighbors(ham_src):
+                    if u not in black and u not in gray:
+                        new_nodes.add(u)
             src_ind = new_src_ind
         if new_sink_ind != sink_ind:
             for i in range(max(0, sink_ind), new_sink_ind):
                 gray.add(path_to[SINK][i])
-            new_nodes.update(_in_neighbors(path_to[SINK][new_sink_ind]))
+            if ham_src != ham_sink:
+                for u in _in_neighbors(ham_sink):
+                    if u not in black and u not in gray:
+                        new_nodes.add(u)
             sink_ind = new_sink_ind
 
         # step 3
         for u in gray:
             for v in _in_neighbors(u) + _out_neighbors(u):
-                if v not in black:
+                if v not in black and v not in gray:
                     new_nodes.add(v)
             black.add(u)
         gray.clear()
 
-    src = path_to[SRC][src_ind]
-    sink = path_to[SINK][sink_ind]
-    return Hammock(src, sink, black.union({src, sink}))
+    return Hammock(ham_src, ham_sink, black.union({ham_src, ham_sink}))

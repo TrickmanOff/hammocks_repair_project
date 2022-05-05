@@ -1,7 +1,0 @@
-114.78 secs spent for finding an approximation of graph edit distance
-
-path_to     - путь до стока сети
-pos_in_path - node:pos - индексы вершин в path_to
-suffix_nodes- set() - текущий суффикс пути
-
-sink_cand   - индекс кандидата в пути
