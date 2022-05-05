@@ -60,7 +60,7 @@ def _find_path(start_nodes, target_node, reverse_order=False):
         next_level = []
         for node in cur_level:
             if node == target_node:  # path found
-                cur_level = []
+                cur_level.clear()
                 break
 
             for arc in (node.in_arcs if reverse_order else node.out_arcs):
@@ -73,7 +73,7 @@ def _find_path(start_nodes, target_node, reverse_order=False):
                 next_level.append(next_node)
         cur_level = next_level
 
-    if node_parent[target_node] is None:
+    if target_node not in node_parent:
         raise Exception("The target_node is not reachable from the given set of nodes")
     path = []
     cur_node = target_node
@@ -96,8 +96,11 @@ def apply(covered_nodes: Iterable[Union[PetriNet.Place, PetriNet.Transition]],
           net_source: PetriNet.Place, net_sink: PetriNet.Place,
           parameters: Optional[Dict[Any, Any]] = None) -> Hammock:
     """
+    Find the minimal hammock that covers the `covered_nodes`
+    Time complexity - O(n + m), where m is the number of edges in the net and n is the number of nodes in it
+
     Parameters
-    ---------------
+    ------------
     covered_nodes
         The set of nodes to cover
     net_source
@@ -105,14 +108,14 @@ def apply(covered_nodes: Iterable[Union[PetriNet.Place, PetriNet.Transition]],
     net_sink
         The sink node of the net
     parameters
-        Parameters of the algorithm
-        PARAM_SOURCE_NODE_TYPE - permitted node type of the hammock's source (ORed NodeTypes) by default: DEFAULT_SOURCE_NODE_TYPE
-        PARAM_SINK_NODE_TYPE - permitted node type of the hammock's source (ORed NodeTypes) by default: DEFAULT_SINK_NODE_TYPE
+        Parameters of the algorithm:
+            - Parameters.PARAM_SOURCE_NODE_TYPE - permitted node type of the hammock's source (ORed NodeTypes), by default: DEFAULT_SOURCE_NODE_TYPE
+            - Parameters.PARAM_SINK_NODE_TYPE - permitted node type of the hammock's source (ORed NodeTypes), by default: DEFAULT_SINK_NODE_TYPE
+
     Returns
-    ---------------
+    ------------
     hammock
         The minimal hammock that covers the `covered_nodes`
-        Time complexity - O(n + m), where m is the number of edges in the net and n is the number of nodes in it
     """
     covered_nodes = set(covered_nodes)
 

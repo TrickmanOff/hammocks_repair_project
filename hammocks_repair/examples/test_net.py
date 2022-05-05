@@ -14,7 +14,7 @@ def create_net_loops():
     net.places.add(start)
 
     plcs = [None]
-    for i in range(1, 4):
+    for i in range(1, 4+1):
         plcs.append(PetriNet.Place(f"p{i}"))
         net.places.add(plcs[i])
 
@@ -26,6 +26,8 @@ def create_net_loops():
     transitions['b'] = add_transition('b', net)
     transitions['c'] = add_transition('c', net)
     transitions['d'] = add_transition('d', net)
+    transitions['e'] = add_transition('e', net)
+    transitions['f'] = add_transition('f', net)
 
     hidden_transitions = {}
     hidden_transitions['a'] = add_transition('a', net, is_hidden=True)
@@ -42,6 +44,10 @@ def create_net_loops():
     petri_utils.add_arc_from_to(plcs[3], transitions['d'], net)
     petri_utils.add_arc_from_to(transitions['d'], plcs[3], net)
     petri_utils.add_arc_from_to(transitions['d'], end, net)
+    petri_utils.add_arc_from_to(plcs[2], transitions['e'], net)
+    petri_utils.add_arc_from_to(transitions['e'], plcs[4], net)
+    petri_utils.add_arc_from_to(plcs[4], transitions['f'], net)
+    petri_utils.add_arc_from_to(transitions['f'], plcs[2], net)
 
     # marking
     net_initial_marking = Marking()

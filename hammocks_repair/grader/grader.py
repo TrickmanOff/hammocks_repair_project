@@ -226,10 +226,10 @@ def grade(test_dirs, forced_grade=False, metrics_used=DEFAULT_METRICS_USED):
             if Metrics.EDIT_SIM in metrics_used:
                 print('Calculating graph edit similarity...')
                 stats['graph_edit_similarity'] = {}
-                stats['graph_edit_similarity']['to_perfect'] = round(graph_edit_similarity_prom.sim_dist_prom(repaired_net_filepath, perfect_net_filepath), 3)
+                # stats['graph_edit_similarity']['to_perfect'] = round(graph_edit_similarity_prom.sim_dist_prom(repaired_net_filepath, perfect_net_filepath), 3)
                 stats['graph_edit_similarity']['to_given'] = round(graph_edit_similarity_prom.sim_dist_prom(repaired_net_filepath, given_net_filepath), 3)
-                stats['graph_edit_similarity']['to_perfect'] = round(graph_edit_similarity.pn_edit_similarity(rep_net, perfect_net, we=1, wn=1, ws=1), 3)
-                stats['graph_edit_similarity']['to_given'] = round(graph_edit_similarity.pn_edit_similarity(rep_net, given_net, we=1, wn=1, ws=1), 3)
+                # stats['graph_edit_similarity']['to_perfect'] = round(graph_edit_similarity.pn_edit_similarity(rep_net, perfect_net, we=1, wn=1, ws=1), 3)
+                # stats['graph_edit_similarity']['to_given'] = round(graph_edit_similarity.pn_edit_similarity(rep_net, given_net, we=1, wn=1, ws=1), 3)
                 add_data_to_grade_info(test_dir, repair_method_name, stats)
 
             # precision

@@ -41,21 +41,6 @@ DEFAULT_SUBPROCESS_MINER_ALGO_VARIANT = None
 DEFAULT_PREREPAIR_VARIANT = PrerepairVariants.NAIVE_LOG_ONLY
 
 
-def __conv_pairs_to_graph(pairs):
-    '''
-    converts given pairs to a graph for the hammocks covering algo
-    '''
-    graph = {}
-    for a, b in pairs:
-        if a not in graph:
-            graph[a] = []
-        graph[a].append(b)
-        if b not in graph:
-            graph[b] = []
-        graph[b].append(a)
-    return graph
-
-
 def discover_subprocess(hammock: Hammock, log, parameters):
     '''
     :param hammock:
@@ -102,11 +87,10 @@ def find_bad_hammocks(net: PetriNet, initial_marking, final_marking, aligned_tra
         hammocks: set of hammocks covering
         bad_pairs: dict of found bad pairs
     '''
-    bad_pairs = finding_bad_pairs.find_bad_pairs(net, initial_marking, final_marking, aligned_traces)
-    bad_pairs_g = __conv_pairs_to_graph(bad_pairs)
+    bad_pairs_dict = finding_bad_pairs.find_bad_pairs(net, initial_marking, final_marking, aligned_traces)
 
-    hammocks = hammocks_covering.apply(net, bad_pairs_g, as_graph=True, parameters=parameters)
-    return hammocks, bad_pairs
+    hammocks = hammocks_covering.apply(net, bad_pairs_dict.keys(), as_graph=True, parameters=parameters)
+    return hammocks, bad_pairs_dict
 
 
 def replace_hammock(net: PetriNet, initial_marking, final_marking, hammock: Hammock,
