@@ -49,7 +49,9 @@ def _get_sink_filter(parameters):
 
 def _find_path(start_nodes, target_node, reverse_order=False):
     """
-    :return: path
+    Returns
+    ------------
+    path
         The minimal path from one of the `start_nodes` to the `target_node`
     """
     node_parent = {node: None for node in start_nodes}

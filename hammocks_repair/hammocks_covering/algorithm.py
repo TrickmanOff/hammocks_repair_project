@@ -8,9 +8,7 @@ from pm4py.util import exec_utils
 from hammocks_repair.hammocks_covering.obj import Hammock
 from hammocks_repair.hammocks_covering.variants import minimal_hammock
 from hammocks_repair.hammocks_covering.variants.minimal_hammock import NodeTypes
-
-
-NetNode = Union[PetriNet.Place, PetriNet.Transition]
+from hammocks_repair.utils.pn_typing import NetNode
 
 
 class Variants(Enum):
@@ -67,7 +65,7 @@ def apply(net: PetriNet, covered_nodes: Union[Iterable[NetNode], Iterable[Tuple[
         return apply_to_set(net_source, net_sink, covered_nodes, parameters, variant)
 
 
-def apply_to_set(net_source: PetriNet.Place, net_sink: PetriNet.Place, covered_nodes: Iterable[NetNode], parameters: Dict = None, variant: Variants = Variants.DEFAULT_ALGO):
+def apply_to_set(net_source: PetriNet.Place, net_sink: PetriNet.Place, covered_nodes: Iterable[NetNode], parameters: Optional[Dict[Any, Any]] = None, variant: Variants = Variants.DEFAULT_ALGO):
     return exec_utils.get_variant(variant).apply(covered_nodes, net_source, net_sink, parameters)
 
 
@@ -85,7 +83,7 @@ def _get_component(graph, v):  # bfs
     return used
 
 
-def apply_to_graph(net_source: PetriNet.Place, net_sink: PetriNet.Place, linked_pairs: Iterable[Tuple[NetNode, NetNode]], parameters: Dict = None, variant: Variants = Variants.DEFAULT_ALGO) -> List[Hammock]:
+def apply_to_graph(net_source: PetriNet.Place, net_sink: PetriNet.Place, linked_pairs: Iterable[Tuple[NetNode, NetNode]], parameters: Optional[Dict[Any, Any]] = None, variant: Variants = Variants.DEFAULT_ALGO) -> List[Hammock]:
     cr_graph = {}  # linked_pairs -> graph
     for u, v in linked_pairs:
         if u not in cr_graph:

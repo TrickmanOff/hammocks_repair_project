@@ -1,6 +1,6 @@
 from pm4py.objects.petri_net.obj import PetriNet
 
-from hammocks_repair.conformance_analysis import finding_bad_pairs
+from hammocks_repair.conformance_analysis import bad_pairs_selection
 from typing import Optional, Dict, Any
 from hammocks_repair.hammocks_covering import algorithm as hammocks_covering
 from hammocks_repair.hammocks_covering.algorithm import NodeTypes
@@ -87,7 +87,7 @@ def find_bad_hammocks(net: PetriNet, initial_marking, final_marking, aligned_tra
         hammocks: set of hammocks covering
         bad_pairs: dict of found bad pairs
     '''
-    bad_pairs_dict = finding_bad_pairs.find_bad_pairs(net, initial_marking, final_marking, aligned_traces)
+    bad_pairs_dict = bad_pairs_selection.apply(net, initial_marking, final_marking, aligned_traces)
 
     hammocks = hammocks_covering.apply(net, bad_pairs_dict.keys(), as_graph=True, parameters=parameters)
     return hammocks, bad_pairs_dict

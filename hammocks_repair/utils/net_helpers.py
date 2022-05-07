@@ -15,6 +15,13 @@ def remove_node(net: PetriNet, node):
         petri_utils.remove_transition(net, node)
 
 
+def get_node_by_name(net: PetriNet, name):
+    node = get_place_by_name(net, name)
+    if node is None:
+        node = find_transition(net, name)
+    return node
+
+
 def get_transition_by_label(net: PetriNet, label):
     '''
     :return: the first matching transition for the `label`

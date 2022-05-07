@@ -12,4 +12,7 @@ if __name__ == "__main__":
     test_minimal_hammock = MinimalHammockTest()
     test_hammocks_covering = HammocksCoveringTest()
 
+    from tests.test_bad_pairs_selection import BadPairsSelectionTest
+    test_bad_pairs_selection = BadPairsSelectionTest()
+
     unittest.main()

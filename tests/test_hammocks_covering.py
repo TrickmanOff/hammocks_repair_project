@@ -12,15 +12,10 @@ NodeTypes = minimal_hammock.NodeTypes
 def _get_nodes_by_names(net, names):
     nodes = []
     for name in names:
-        plc = net_helpers.get_place_by_name(net, name)
-        if plc is not None:
-            nodes.append(plc)
-            continue
-        trans = net_helpers.find_transition(net, name)
-        if trans is not None:
-            nodes.append(trans)
-            continue
-        raise RuntimeError(f"No node with name {name} found in the net")
+        node = net_helpers.get_node_by_name(net, name)
+        if node is None:
+            raise RuntimeError(f"No node with name {name} found in the net")
+        nodes.append(node)
     return nodes
 
 

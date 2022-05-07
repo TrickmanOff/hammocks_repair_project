@@ -7,7 +7,7 @@ from pm4py.objects.conversion.log import converter
 from pm4py.algo.simulation.playout.petri_net import algorithm as pn_playout
 from pm4py.algo.filtering.pandas.end_activities import end_activities_filter
 from hammocks_repair.utils import net_helpers
-from hammocks_repair.conformance_analysis import finding_bad_pairs
+from hammocks_repair.conformance_analysis import bad_pairs_selection
 
 net, init_marking, final_marking = test_net.create_net()
 
@@ -65,7 +65,7 @@ def print_bad_pair_hammock():
 
     net_helpers.del_trans('admit_helplessness_hidden_t', net)
 
-    bad_ps = finding_bad_pairs.find_bad_pairs(net, init_marking, final_marking, converter.apply(df, variant=converter.Variants.TO_EVENT_LOG))
+    bad_ps = bad_pairs_selection.apply(net, init_marking, final_marking, converter.apply(df, variant=converter.Variants.TO_EVENT_LOG))
     pairs = [(find_transition(net, p[0]), find_transition(p[1], net)) for p in bad_ps.keys()]
     hammocks = hammocks_covering.apply(net, pairs, as_graph=True)
 
