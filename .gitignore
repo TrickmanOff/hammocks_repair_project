@@ -5,3 +5,4 @@ tmp.txt
 *.png
 hammocks_repair/grader/tests
 images
+stats.sh

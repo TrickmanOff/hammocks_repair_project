@@ -27,7 +27,7 @@ DEFAULT_HAMMOCK_PERMITTED_SOURCE_NODE_TYPE = NodeTypes.PLACE_TYPE
 DEFAULT_HAMMOCK_PERMITTED_SINK_NODE_TYPE = NodeTypes.PLACE_TYPE
 
 
-def apply(net: PetriNet, covered_nodes: Union[Iterable[NetNode], Iterable[Tuple[NetNode, NetNode]]], as_graph=False, parameters: Optional[Dict[Any, Any]] = None, variant: Variants = Variants.DEFAULT_ALGO):
+def apply(net: PetriNet, covered_nodes: Union[Iterable[NetNode], Iterable[Tuple[NetNode, NetNode]]], as_pairs=False, parameters: Optional[Dict[Any, Any]] = None, variant: Variants = Variants.DEFAULT_ALGO):
     """
     Find a set of hammocks covering the nodes present in the `linked_pairs` with each pair covered by one hammock
 
@@ -36,9 +36,9 @@ def apply(net: PetriNet, covered_nodes: Union[Iterable[NetNode], Iterable[Tuple[
     net
         a Petri net
     covered_nodes
-        if as_graph=False: set of vertices to be covered by one hammock
-        if as_graph=True: pairs of nodes that should be in one hammock (linked_pairs)
-    as_graph
+        if as_pairs=False: set of vertices to be covered by one hammock
+        if as_pairs=True: pairs of nodes that should be in one hammock (linked_pairs)
+    as_pairs
         determines how to interpret the `covered_nodes`
     parameters
         Parameters of the algorithm:
@@ -59,7 +59,7 @@ def apply(net: PetriNet, covered_nodes: Union[Iterable[NetNode], Iterable[Tuple[
     net_source = check_soundness.check_source_place_presence(net)
     net_sink = check_soundness.check_sink_place_presence(net)
 
-    if as_graph:
+    if as_pairs:
         return apply_to_graph(net_source, net_sink, covered_nodes, parameters, variant)
     else:
         return apply_to_set(net_source, net_sink, covered_nodes, parameters, variant)

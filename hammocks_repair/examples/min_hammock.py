@@ -48,7 +48,7 @@ def print_min_hammock_pairs():
     viz = net_visualize.visualize_pairs(pairs_vis, net, init_marking, final_marking)
     pn_visualizer.save(viz, 'images/pairs.png')
 
-    hammocks = hammocks_covering.apply(net, pairs, as_graph=True)
+    hammocks = hammocks_covering.apply(net, pairs, as_pairs=True)
     nodes = []
     for pair in pairs:
         nodes.append(pair[0])
@@ -67,7 +67,7 @@ def print_bad_pair_hammock():
 
     bad_ps = bad_pairs_selection.apply(net, init_marking, final_marking, converter.apply(df, variant=converter.Variants.TO_EVENT_LOG))
     pairs = [(find_transition(net, p[0]), find_transition(p[1], net)) for p in bad_ps.keys()]
-    hammocks = hammocks_covering.apply(net, pairs, as_graph=True)
+    hammocks = hammocks_covering.apply(net, pairs, as_pairs=True)
 
     nodes = []
     for pair in pairs:

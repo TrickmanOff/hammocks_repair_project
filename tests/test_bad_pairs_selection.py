@@ -57,6 +57,9 @@ class BadPairsSelectionTest(unittest.TestCase):
         self.assertEqual(true_bad_pairs, res)
 
     def test2(self):
+        """
+        bad pairs with end (incorrect alignments actually but expected behavior from bad_pairs_selection) + hidden transitions
+        """
         net, im, fm = test_net.create_net()
 
         # ( (log_name, model_name), (log_label, model_label) )

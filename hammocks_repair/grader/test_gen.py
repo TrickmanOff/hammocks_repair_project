@@ -2,6 +2,7 @@ from . import grader
 import hammocks_repair.examples.bad_pairs_hammocks_covering as bad_pairs_hammocks_covering
 import hammocks_repair.hammocks_covering.algorithm as hammocks_covering_algo
 import hammocks_repair.net_repair.hammocks_replacement.algorithm as hammocks_replacement_algo
+from hammocks_repair.utils import net_helpers
 
 from pm4py.objects.conversion.log import converter
 from pm4py.algo.simulation.playout.petri_net import algorithm as pn_playout
@@ -30,8 +31,8 @@ generates tests for grading
 '''
 
 
-def __add_noise_to_trace(trace, noise_threshold=0.05, swap_pr=1/3, del_pr=1/3, ins_pr=1/3,
-                         activities_to_insert=None):
+def _add_noise_to_trace(trace, noise_threshold=0.05, swap_pr=1 / 3, del_pr=1 / 3, ins_pr=1 / 3,
+                        activities_to_insert=None):
     '''
     trace: list of strings
     activities_to_insert: list of strings
@@ -85,8 +86,8 @@ def add_noise_to_trace(trace, noise_threshold=0.05, swap_pr=1/3, del_pr=1/3, ins
         activities_to_insert = [act for act in
                                 trace]  # repetitions of activities are intentionally allowed
 
-    mid = __add_noise_to_trace(trace[st_offset:-end_offset], noise_threshold, swap_pr, del_pr,
-                               ins_pr, activities_to_insert)
+    mid = _add_noise_to_trace(trace[st_offset:-end_offset], noise_threshold, swap_pr, del_pr,
+                              ins_pr, activities_to_insert)
     return trace[:st_offset] + mid + trace[-end_offset:]
 
 
@@ -161,8 +162,7 @@ def create_test(test_gen):
     return func
 
 
-@create_test
-def create_test_by_building_on_sublog(model_filepath, log_filepath, given_net_sublog_perc=0.2, given_log_sublog_perc=0.3):
+def gen_test_by_building_on_sublog(model_filepath, log_filepath, given_net_sublog_perc=0.2, given_log_sublog_perc=0.3):
     '''
     creates a test by rediscovering the model on a random sublog
 
@@ -187,17 +187,17 @@ def create_test_by_building_on_sublog(model_filepath, log_filepath, given_net_su
     return given_net, given_initial_marking, given_final_marking, perfect_net, perfect_im, perfect_fm, given_log
 
 
-def create_sample_test(test_folder, case=bad_pairs_hammocks_covering.Variants.CASE1):
-    if not os.path.exists(test_folder):
-        os.makedirs(test_folder)
+create_test_by_building_on_sublog = create_test(gen_test_by_building_on_sublog)
 
+
+def gen_sample_test(case=bad_pairs_hammocks_covering.Variants.CASE1):
     given_net, given_initial_marking, given_final_marking,\
         perfect_net, perfect_initial_marking, perfect_final_marking, log = bad_pairs_hammocks_covering.get_sample_data(case)
 
-    pnml_exporter.apply(given_net, given_initial_marking, os.path.join(test_folder, grader.GIVEN_NET_FILENAME + grader.NET_EXT), final_marking=given_final_marking)
-    xes_exporter.apply(log, os.path.join(test_folder, grader.LOG_FOR_REPAIR_FILENAME))
-    pnml_exporter.apply(perfect_net, perfect_initial_marking, os.path.join(test_folder, grader.PERFECT_NET_FILENAME + grader.NET_EXT), final_marking=perfect_final_marking)
-    print(f'Created test in the folder \'{test_folder}\'')
+    return given_net, given_initial_marking, given_final_marking, perfect_net, perfect_initial_marking, perfect_final_marking, log
+
+
+create_sample_test = create_test(gen_sample_test)
 
 
 def get_disjoint_hammocks(net: PetriNet, min_hammock_size=2) -> List[Hammock]:
@@ -259,7 +259,7 @@ def worsen_net_in_hammocks(net, initial_marking, final_marking, log, min_hammock
 
         net, initial_marking, final_marking = hammocks_replacement_algo.replace_hammock(net, initial_marking, final_marking, ham, subnet, subnet_src, subnet_sink)
 
-    net = hammocks_replacement_algo.enumerate_nodes_successively(net)
+    net = net_helpers.enumerate_nodes_successively(net)
     return net, initial_marking, final_marking
 
 
@@ -272,8 +272,7 @@ def gen_log_for_net(net: PetriNet, initial_marking, final_marking, trace_cnt=500
     return sim_log
 
 
-@create_test
-def create_test_by_worsening_hammocks(model_filepath, log_filepath=None, min_hammock_size=10, hammocks_cnt=5, hammock_sublog_ratio=0.3, limit_log_for_repair=0.5):
+def gen_test_by_worsening_hammocks(model_filepath, log_filepath=None, min_hammock_size=10, hammocks_cnt=5, hammock_sublog_ratio=0.3, limit_log_for_repair=0.5):
     '''
     creates a test by rediscovering hammocks in the model on random sublogs
 
@@ -290,6 +289,9 @@ def create_test_by_worsening_hammocks(model_filepath, log_filepath=None, min_ham
     # probably should limit the log for repair
     given_net, given_net_im, given_net_fm = worsen_net_in_hammocks(perfect_net, perfect_net_im, perfect_net_fm, log, min_hammock_size, hammocks_cnt, hammock_sublog_ratio)
     return given_net, given_net_im, given_net_fm, perfect_net, perfect_net_im, perfect_net_fm, log
+
+
+create_test_by_worsening_hammocks = create_test(gen_test_by_worsening_hammocks)
 
 
 def generate():

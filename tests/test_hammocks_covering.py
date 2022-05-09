@@ -237,7 +237,7 @@ class HammocksCoveringTest(unittest.TestCase):
 
         true_hammocks = [_init_hammock(net, true_hammocks_nodes_names[i], true_hammocks_source_name[i], true_hammocks_sink_name[i]) for i in range(hammocks_cnt)]
 
-        res_hammocks = hammocks_covering_algo.apply(net, linked_pairs, as_graph=True, parameters=parameters)
+        res_hammocks = hammocks_covering_algo.apply(net, linked_pairs, as_pairs=True, parameters=parameters)
         self.assertEqual(set(true_hammocks), set(res_hammocks))
 
         # case 2: intersecting hammocks
@@ -263,7 +263,7 @@ class HammocksCoveringTest(unittest.TestCase):
         true_hammocks_sink_name[0] = 'p9'
         true_hammocks = [_init_hammock(net, true_hammocks_nodes_names[i], true_hammocks_source_name[i], true_hammocks_sink_name[i]) for i in range(hammocks_cnt)]
 
-        res_hammocks = hammocks_covering_algo.apply(net, linked_pairs, as_graph=True, parameters=parameters)
+        res_hammocks = hammocks_covering_algo.apply(net, linked_pairs, as_pairs=True, parameters=parameters)
         self.assertEqual(set(true_hammocks), set(res_hammocks))
 
 

@@ -1,59 +1,62 @@
-from typing import Optional, Dict, Any, Set, List, Tuple
 from copy import copy
 from enum import Enum
+from typing import Optional, Dict, Any, Set, List, Tuple, Union
+import pandas as pd
 
-from pm4py.objects.petri_net.obj import PetriNet, Marking
-from pm4py.algo.conformance.tokenreplay.variants import token_replay
-from pm4py.objects.petri_net.utils import petri_utils
-from pm4py.util import exec_utils
 from pm4py.algo.conformance.alignments.petri_net import algorithm as alignments_algo
+from pm4py.objects.log.obj import EventLog, EventStream
+from pm4py.objects.petri_net.obj import PetriNet, Marking
+from pm4py.objects.petri_net.utils import petri_utils, check_soundness
 
 from hammocks_repair.utils import net_helpers
 
 
 class Parameters(Enum):
-    MODIFY_ALIGNMENTS_MODE = 'modify_alignments_mode'  # from ModifyAlignments
+    ALIGNMENTS_MODIFICATION_MODE = 'modify_alignments_mode'  # from ModifyAlignments
 
 
-class ModifyAlignments(Enum):
-    NONE = 'none'
-    LOG2SYNC = 'sync'
-    LOG2MODEL = 'model_only'
+class AlignmentsModificationMode(Enum):
+    NONE = 'none'               # no modifications
+    LOG2SYNC = 'sync'           # replace log-only moves with corresponding sync moves
+    LOG2MODEL = 'model_only'    # replace log-only moves with corresponding model-only moves
 
 
-DEFAULT_MODIFY_ALIGNMENTS_MODE = ModifyAlignments.NONE
+DEFAULT_MODIFY_ALIGNMENTS_MODE = AlignmentsModificationMode.NONE
 
 
-def get_log_only_moves_locations(net: PetriNet, initial_marking, final_marking, alignments) -> Dict[str, List[Tuple[Set, List]]]:
-    '''
-    :return:
-    t_label -> [
-      (location - set of places, corresponding log.xes-only moves in the alignments),
-      ...
-    ]
-    '''
-    log_only_moves_markings = {}
+def _get_log_only_moves_insertion_places(net: PetriNet, initial_marking, alignments) -> Dict[str, List[Tuple[Set, List]]]:
+    """
+    Returns
+    ------------
+    places_sets_for_log_only_moves
+        for each log-only move (t_label, >>) in the alignments:
+
+        t_label -> [
+          ( set of places, corresponding log-only moves in the alignments as pairs (alignment, move_index) ),
+          ...,
+        ]
+    """
+    log_only_moves_locations = {}
     # t_label -> {
-    #   marking: [ (alignment, move_index), ... ],
+    #   location_1 (frozenset): [ (alignment, move_index), ... ],
     #   ...
+    #   location_q (frozenset): [ (alignment, move_index), ... ],
     # }
     for alignment_info in alignments:
-        marking = copy(initial_marking)
         alignment = alignment_info['alignment']
+        marking = copy(initial_marking)
 
         for move_index, move in enumerate(alignment):
-            names, labels = move
-            model_name = names[1]
-            model_label = labels[1]
-            log_label = labels[0]
+            # ( (log_name, model_name), (log_label, model_label) )
+            (_, model_name), (log_label, model_label) = move
 
-            if model_label == '>>':  # log.xes-only move
-                if log_label not in log_only_moves_markings:
-                    log_only_moves_markings[log_label] = {}
-                marking_key = frozenset(marking)
-                if marking_key not in log_only_moves_markings[log_label]:
-                    log_only_moves_markings[log_label][marking_key] = []
-                log_only_moves_markings[log_label][marking_key].append((alignment, move_index))
+            if model_label == '>>':  # log-only move
+                if log_label not in log_only_moves_locations:
+                    log_only_moves_locations[log_label] = {}
+                location = frozenset(marking.keys())
+                if location not in log_only_moves_locations[log_label]:
+                    log_only_moves_locations[log_label][location] = []
+                log_only_moves_locations[log_label][location].append((alignment, move_index))
             else:  # fire the transition
                 fired_transition = petri_utils.get_transition_by_name(net, model_name)
                 for in_arc in fired_transition.in_arcs:
@@ -65,89 +68,118 @@ def get_log_only_moves_locations(net: PetriNet, initial_marking, final_marking, 
                         marking[out_arc.target] = 0
                     marking[out_arc.target] += out_arc.weight
 
-    log_only_moves_locations = {}  # t_label -> [ location1 - set of places, location2 - set of places, ... ]
+    places_sets_for_log_only_moves = {}  # t_label -> [ (set of places, list of moves in the alignments), ...,  ]
     # finding intersections for locations
-    for t_label, markings in log_only_moves_markings.items():
-        alignments_moves = list(markings.values())
-        markings = list(markings.keys())
+    for t_label, locations_dict in log_only_moves_locations.items():
+        locations = list(locations_dict.keys())
+        alignments_moves = list(locations_dict.values())
 
-        markings_for_plc = {}
-        locations = []
+        locations_containing_place = {}  # place -> {location indices in `locations`}
 
-        for i, marking in enumerate(markings):
-            for plc in marking:
-                if plc not in markings_for_plc:
-                    markings_for_plc[plc] = set()
-                markings_for_plc[plc].add(i)
+        for i, location in enumerate(locations):
+            for plc in location:
+                if plc not in locations_containing_place:
+                    locations_containing_place[plc] = set()
+                locations_containing_place[plc].add(i)
+
+        places_sets = []  # ( {p1, ..., } - places, [(alignment, move_index), ..., ] - alignments moves )
 
         while True:
-            max_markings_for_plc = set()
-            for plc, plc_markings in markings_for_plc.items():
-                if len(plc_markings) > len(max_markings_for_plc):
-                    max_markings_for_plc = plc_markings
-            max_markings_for_plc = copy(max_markings_for_plc)
+            max_locations_for_plc = set()  # place with maximal number of locations containing it
+            for plc, plc_locations in locations_containing_place.items():
+                if len(plc_locations) > len(max_locations_for_plc):
+                    max_locations_for_plc = plc_locations
 
-            if not max_markings_for_plc:
+            if not max_locations_for_plc:
                 break
 
-            cur_location = {plc for plc, plc_markings in markings_for_plc.items() if plc_markings == max_markings_for_plc}
+            # intersection of locations from `max_locations_for_plc`
+            locations_intersection = set()
+            for i in max_locations_for_plc:
+                if not locations_intersection:
+                    locations_intersection = set(locations[i])
+                else:
+                    locations_intersection.intersection_update(locations[i])
+
             corresponding_alignments_moves = []
-            for marking_index in max_markings_for_plc:
-                corresponding_alignments_moves += alignments_moves[marking_index]
-            locations.append((cur_location, corresponding_alignments_moves))
+            for location_index in max_locations_for_plc:
+                corresponding_alignments_moves += alignments_moves[location_index]
+            places_sets.append((locations_intersection, corresponding_alignments_moves))
 
-            for marking_index in max_markings_for_plc:
-                for plc in markings[marking_index]:
-                    markings_for_plc[plc].remove(marking_index)
+            for location_index in copy(max_locations_for_plc):
+                for plc in locations[location_index]:
+                    locations_containing_place[plc].remove(location_index)
 
-        log_only_moves_locations[t_label] = locations
+        places_sets_for_log_only_moves[t_label] = places_sets
 
-    return log_only_moves_locations
+    return places_sets_for_log_only_moves
 
 
-def apply(net: PetriNet, initial_marking, final_marking, log, alignments=None, parameters: Optional[Dict[Any, Any]] = None):
+def apply(net: PetriNet, initial_marking: Marking, final_marking: Marking,
+          log: Union[pd.DataFrame, EventLog, EventStream], alignments=None, parameters: Optional[Dict[Any, Any]] = None) -> Tuple[PetriNet, Marking, Marking]:
+    """
+    Parameters
+    ------------
+    net, initial_marking, final_marking
+        A WF-net to be repaired
+    log
+        Event log for the net repair
+    alignments
+        Optional alignments to be used in the algorithm.
+        A parameter PARAM_ALIGNMENT_RESULT_IS_SYNC_PROD_AWARE should be set to True during their calculation.
+        if not provided, they will be calculated
+    parameters
+        Parameters.ALIGNMENTS_MODIFICATION_MODE -> One of AlignmentsModificationMode: mode of alignments' modification during the repair
+
+    Returns
+    ------------
+    net, initial_marking, final_marking
+        The repaired net
+    """
+    if not check_soundness.check_wfnet(net):
+        raise Exception("Trying to apply repair algorithm on a Petri Net that is not a WF-net")
+
     net, initial_marking, final_marking = net_helpers.deepcopy_net(net, initial_marking, final_marking)
 
     if alignments is None:
         alignments_parameters = {
             alignments_algo.Parameters.PARAM_ALIGNMENT_RESULT_IS_SYNC_PROD_AWARE: True
         }
-        alignments = alignments_algo.apply_log(log, net, initial_marking, final_marking,
-                                               parameters=alignments_parameters)
+        alignments = alignments_algo.apply_log(log, net, initial_marking, final_marking, parameters=alignments_parameters)
 
-    log_only_moves_locations = get_log_only_moves_locations(net, initial_marking, final_marking, alignments)
+    places_sets_for_log_only_moves = _get_log_only_moves_insertion_places(net, initial_marking, alignments)
 
-    replace_logonly_mode = parameters.get(Parameters.MODIFY_ALIGNMENTS_MODE, DEFAULT_MODIFY_ALIGNMENTS_MODE)
+    replace_logonly_mode = parameters.get(Parameters.ALIGNMENTS_MODIFICATION_MODE, DEFAULT_MODIFY_ALIGNMENTS_MODE)
 
-    for t_label, locations_with_alignments_moves in log_only_moves_locations.items():
-        for location, alignments_moves in locations_with_alignments_moves:
+    for t_label, places_sets_with_alignments_moves in places_sets_for_log_only_moves.items():
+        for places_set, alignments_moves in places_sets_with_alignments_moves:
             transition = petri_utils.add_transition(net, name=None, label=t_label)
-            for plc in location:
+            for plc in places_set:
                 petri_utils.add_arc_from_to(plc, transition, net)
                 petri_utils.add_arc_from_to(transition, plc, net)
             for alignment, move_index in alignments_moves:
+                # a move in alignment: ( (log_name, model_name), (log_label, model_label) )
                 names, labels = alignment[move_index]
-                if replace_logonly_mode == ModifyAlignments.NONE:
+                if replace_logonly_mode == AlignmentsModificationMode.NONE:
                     continue
-                elif replace_logonly_mode == ModifyAlignments.LOG2SYNC:
+                elif replace_logonly_mode == AlignmentsModificationMode.LOG2SYNC:
                     alignment[move_index] = ((names[0], transition.name), (labels[0], t_label))  # labels[0] == t_label
-                elif replace_logonly_mode == ModifyAlignments.LOG2MODEL:
+                elif replace_logonly_mode == AlignmentsModificationMode.LOG2MODEL:
                     alignment[move_index] = ((None, transition.name), ('>>', t_label))
 
-    # duplicating the start position if it is a location of some added loop
+    # duplicating the start/end positions if some new transitions were added to them
     for st_plc in list(initial_marking.keys()):
         if st_plc.in_arcs:
             new_st_plc = petri_utils.add_place(net)
-            removed_arcs = []
-            st_in_trans_names = []
+            st_in_trans_names = set()
             for in_arc in st_plc.in_arcs:
                 trans = in_arc.source
-                st_in_trans_names.append(trans.name)
+                st_in_trans_names.add(trans.name)
                 out_arc = net_helpers.find_arc(st_plc.name, trans.name, net)
-                removed_arcs.append(out_arc)
+                st_plc.out_arcs.remove(out_arc)  # delete out_arc
+                trans.in_arcs.remove(out_arc)
+
                 petri_utils.add_arc_from_to(new_st_plc, trans, net)
-            for arc in removed_arcs:
-                petri_utils.remove_arc(net, arc)
 
             hidden_trans = petri_utils.add_transition(net)
             petri_utils.add_arc_from_to(new_st_plc, hidden_trans, net)
@@ -155,9 +187,9 @@ def apply(net: PetriNet, initial_marking, final_marking, log, alignments=None, p
 
             for alignment_info in alignments:
                 alignment = alignment_info['alignment']
-                names = alignment[0][0]
+                (_, model_name) = alignment[0][0]
 
-                if names[1] not in st_in_trans_names and names[1] != hidden_trans.name:
+                if model_name not in st_in_trans_names and model_name != hidden_trans.name:
                     alignment.insert(0, ((None, hidden_trans.name), ('>>', None)))
 
             initial_marking[new_st_plc] = initial_marking[st_plc]
@@ -166,16 +198,15 @@ def apply(net: PetriNet, initial_marking, final_marking, log, alignments=None, p
     for end_plc in list(final_marking.keys()):
         if end_plc.out_arcs:
             new_end_plc = petri_utils.add_place(net)
-            removed_arcs = []
-            end_out_trans_names = []
+            end_out_trans_names = set()
             for out_arc in end_plc.out_arcs:
                 trans = out_arc.target
-                end_out_trans_names.append(trans.name)
+                end_out_trans_names.add(trans.name)
                 in_arc = net_helpers.find_arc(trans.name, end_plc.name, net)
-                removed_arcs.append(in_arc)
+                end_plc.in_arcs.remove(in_arc)  # delete in_arc
+                trans.out_arcs.remove(in_arc)
+
                 petri_utils.add_arc_from_to(trans, new_end_plc, net)
-            for arc in removed_arcs:
-                petri_utils.remove_arc(net, arc)
 
             hidden_trans = petri_utils.add_transition(net)
             petri_utils.add_arc_from_to(end_plc, hidden_trans, net)
@@ -183,9 +214,9 @@ def apply(net: PetriNet, initial_marking, final_marking, log, alignments=None, p
 
             for alignment_info in alignments:
                 alignment = alignment_info['alignment']
-                names = alignment[-1][0]
+                (_, model_name) = alignment[-1][0]
 
-                if names[1] not in end_out_trans_names and names[1] != hidden_trans.name:
+                if model_name not in end_out_trans_names and model_name != hidden_trans.name:
                     alignment.append(((None, hidden_trans.name), ('>>', None)))
 
             final_marking[new_end_plc] = final_marking[end_plc]

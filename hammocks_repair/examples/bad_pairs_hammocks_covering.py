@@ -8,6 +8,10 @@ from pm4py.visualization.petri_net import visualizer as pn_visualizer
 from pm4py.visualization.petri_net.common import visualize
 from hammocks_repair.examples.test_net import Variants
 
+
+from hammocks_repair.conformance_analysis import bad_pairs_selection
+from hammocks_repair.hammocks_covering import algorithm as hammocks_covering_algo
+
 from pm4py.objects.petri_net.utils import petri_utils
 from pm4py.util import exec_utils
 from pm4py.algo.discovery.inductive import algorithm as inductive_miner
@@ -24,7 +28,7 @@ import os
 functions in this module repeat the corresponding algorithms but with
 visualization of intermediate step
 
-so each function SHOULD BE REWRITTEN in case of changes in the corresponding functions
+so each function SHOULD BE REWRITTEN in case of significant changes in the corresponding functions
 '''
 
 
@@ -141,8 +145,8 @@ def visualize_hammocks_replacement_repair(net, init_marking, final_marking, log,
             should_recalculate_alignments = True
     elif supress_logonly_in_alignments:
         if prerepair_variant == hammocks_replacement.PrerepairVariants.NAIVE_LOG_ONLY.value:
-            if parameters.get(naive_log_only.Parameters.MODIFY_ALIGNMENTS_MODE,
-                              naive_log_only.DEFAULT_MODIFY_ALIGNMENTS_MODE) is naive_log_only.ModifyAlignments.NONE:
+            if parameters.get(naive_log_only.Parameters.ALIGNMENTS_MODIFICATION_MODE,
+                              naive_log_only.DEFAULT_MODIFY_ALIGNMENTS_MODE) is naive_log_only.AlignmentsModificationMode.NONE:
                 should_recalculate_alignments = True
         # hardcode for each possible prerepair_variants (that's probably not the best solution)
 
@@ -152,7 +156,7 @@ def visualize_hammocks_replacement_repair(net, init_marking, final_marking, log,
             hammocks_replacement.Parameters.SUPRESS_LOGONLY_IN_ALIGNMENTS, parameters, True)
         if supress_logonly_in_alignments:
             print('  using custom cost function')
-            parameters = hammocks_replacement.use_custom_cost_function(net, alignments, parameters)
+            parameters = hammocks_replacement._use_custom_cost_function(net, alignments, parameters)
         wall_time, alignments = timeit(alignments_algo.apply_log)(log, net, init_marking, final_marking,
                                                                   parameters=alignments_parameters)
         stats['time']['alignments'] += wall_time
@@ -161,11 +165,12 @@ def visualize_hammocks_replacement_repair(net, init_marking, final_marking, log,
     stats['alignments']['log_only_moves_after_prerepair'] = alignment_stats['log_only']
     stats['alignments']['model_only_moves_after_prerepair'] = alignment_stats['model_only']
 
-    # hammocks replacement
-    wall_time, (hammocks, bad_pairs) = timeit(hammocks_replacement.find_bad_hammocks)(net, init_marking,
-                                                                                      final_marking,
-                                                                                      alignments,
-                                                                                      parameters=parameters)
+    # bad pairs
+    wall_time, bad_pairs = timeit(bad_pairs_selection.apply)(net, init_marking, final_marking, alignments)
+    stats['time']['hammocks_replacement'] += wall_time
+
+    # find covering hammocks
+    wall_time, hammocks = timeit(hammocks_covering_algo.apply)(net, bad_pairs.keys(), as_pairs=True, parameters=parameters)
     stats['time']['hammocks_replacement'] += wall_time
 
     covered_nodes = [pair[0] for pair in bad_pairs.keys()] + [pair[1] for pair in bad_pairs.keys()]
@@ -197,7 +202,7 @@ def visualize_hammocks_replacement_repair(net, init_marking, final_marking, log,
         subproc_nodes = list(subproc_net.places) + list(subproc_net.transitions)
         decorations = net_visualize.paint_nodes(subproc_nodes, decorations=decorations)
 
-    hammocks_replacement.enumerate_nodes_successively(rep_net)
+    net_helpers.enumerate_nodes_successively(rep_net)
 
     # repaired net
     if repaired_net_filename is not None:

@@ -74,7 +74,7 @@ def del_trans(label, net):
         print(f'trans "{label}" not found')
         return
 
-    print('delete', del_tr)
+    # print('delete', del_tr)
     return petri_utils.remove_transition(net, del_tr)
 
 
@@ -87,7 +87,7 @@ def del_place(label, net):
     if del_plc is None:
         print(f'place "{label}" not found')
         return
-    print('delete', del_plc)
+    # print('delete', del_plc)
     return petri_utils.remove_place(net, del_plc)
 
 
@@ -118,7 +118,7 @@ def create_arc(source_name, target_name, net):
     target.in_arcs.add(arc)
     net.arcs.add(arc)
 
-    print('created', arc)
+    # print('created', arc)
 
 
 def add_transition(alias, net, is_hidden=False):
@@ -143,3 +143,12 @@ def deepcopy_net(net, initial_marking, final_marking):
         final_marking_copy[get_place_by_name(net_copy, plc.name)] = cnt
 
     return net_copy, initial_marking_copy, final_marking_copy
+
+
+def enumerate_nodes_successively(net):
+    for i, place in enumerate(net.places):
+        place.name = 'p_' + str(i + 1)
+    for i, trans in enumerate(net.transitions):
+        trans.name = 't_' + str(i + 1)
+
+    return net

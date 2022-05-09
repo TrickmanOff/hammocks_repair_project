@@ -111,6 +111,8 @@ def _select_bad_pairs(net: PetriNet, alignment, initial_marking, final_marking):
 
 def apply(net: PetriNet, initial_marking: Marking, final_marking: Marking, aligned_traces: Union[typing.AlignmentResult, typing.ListAlignments]) -> Dict[Tuple[NetNode, NetNode], int]:
     """
+    Select "bad" pairs of nodes (transitions or start/end places) based on the given alignments
+
     Parameters
     ------------
     aligned_traces
