@@ -6,3 +6,5 @@ tmp.txt
 hammocks_repair/grader/tests
 images
 stats.sh
+
+net_stats.py

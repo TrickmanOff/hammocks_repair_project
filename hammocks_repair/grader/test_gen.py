@@ -272,7 +272,7 @@ def gen_log_for_net(net: PetriNet, initial_marking, final_marking, trace_cnt=500
     return sim_log
 
 
-def gen_test_by_worsening_hammocks(model_filepath, log_filepath=None, min_hammock_size=10, hammocks_cnt=5, hammock_sublog_ratio=0.3, limit_log_for_repair=0.5):
+def gen_test_by_worsening_hammocks(model_filepath, log_filepath=None, min_hammock_size=5, hammocks_cnt=5, hammock_sublog_ratio=0.3, limit_log_for_repair=0.5):
     '''
     creates a test by rediscovering hammocks in the model on random sublogs
 

@@ -142,6 +142,12 @@ def get_net_stats(net):
     stats = {}
     stats['places_cnt'] = len(net.places)
     stats['trans_cnt'] = len(net.transitions)
+
+    hidden_transitions_cnt = 0
+    for trans in net.transitions:
+        hidden_transitions_cnt += (trans.label is None)
+    stats['hidden_trans_cnt'] = hidden_transitions_cnt
+
     return stats
 
 

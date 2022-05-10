@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional, Dict, Any, Union, Iterable, List, Tuple
+from typing import Optional, Dict, Any, Union, Iterable, List, Tuple, Sequence
 
 from pm4py.objects.petri_net.obj import PetriNet
 from pm4py.objects.petri_net.utils import check_soundness
@@ -27,7 +27,7 @@ DEFAULT_HAMMOCK_PERMITTED_SOURCE_NODE_TYPE = NodeTypes.PLACE_TYPE
 DEFAULT_HAMMOCK_PERMITTED_SINK_NODE_TYPE = NodeTypes.PLACE_TYPE
 
 
-def apply(net: PetriNet, covered_nodes: Union[Iterable[NetNode], Iterable[Tuple[NetNode, NetNode]]], as_pairs=False, parameters: Optional[Dict[Any, Any]] = None, variant: Variants = Variants.DEFAULT_ALGO):
+def apply(net: PetriNet, covered_nodes: Union[Sequence[NetNode], Iterable[Tuple[NetNode, NetNode]]], as_pairs=False, parameters: Optional[Dict[Any, Any]] = None, variant: Variants = Variants.DEFAULT_ALGO):
     """
     Find a set of hammocks covering the nodes present in the `linked_pairs` with each pair covered by one hammock
 
@@ -60,13 +60,16 @@ def apply(net: PetriNet, covered_nodes: Union[Iterable[NetNode], Iterable[Tuple[
     net_sink = check_soundness.check_sink_place_presence(net)
 
     if as_pairs:
-        return apply_to_graph(net_source, net_sink, covered_nodes, parameters, variant)
+        return apply_to_graph(net, net_source, net_sink, covered_nodes, parameters, variant)
     else:
-        return apply_to_set(net_source, net_sink, covered_nodes, parameters, variant)
+        return apply_to_set(net, net_source, net_sink, covered_nodes, parameters, variant)
 
 
-def apply_to_set(net_source: PetriNet.Place, net_sink: PetriNet.Place, covered_nodes: Iterable[NetNode], parameters: Optional[Dict[Any, Any]] = None, variant: Variants = Variants.DEFAULT_ALGO):
-    return exec_utils.get_variant(variant).apply(covered_nodes, net_source, net_sink, parameters)
+def apply_to_set(net: PetriNet, net_source: PetriNet.Place, net_sink: PetriNet.Place, covered_nodes: Sequence[NetNode], parameters: Optional[Dict[Any, Any]] = None, variant: Variants = Variants.DEFAULT_ALGO) -> Hammock:
+    linked_pairs = []
+    for i in range(1, len(covered_nodes)):
+        linked_pairs.append((covered_nodes[i-1], covered_nodes[i]))
+    return apply_to_graph(net, net_source, net_sink, linked_pairs, parameters)[0]
 
 
 def _get_component(graph, v):  # bfs
@@ -83,19 +86,40 @@ def _get_component(graph, v):  # bfs
     return used
 
 
-def apply_to_graph(net_source: PetriNet.Place, net_sink: PetriNet.Place, linked_pairs: Iterable[Tuple[NetNode, NetNode]], parameters: Optional[Dict[Any, Any]] = None, variant: Variants = Variants.DEFAULT_ALGO) -> List[Hammock]:
-    cr_graph = {}  # linked_pairs -> graph
-    for u, v in linked_pairs:
-        if u not in cr_graph:
-            cr_graph[u] = set()
-        cr_graph[u].add(v)
-        if v not in cr_graph:
-            cr_graph[v] = set()
-        cr_graph[v].add(u)
-    cr_graph_nodes = set(cr_graph.keys())
+def _add_edge(u, v, graph):
+    if u not in graph:
+        graph[u] = set()
+    graph[u].add(v)
+    if v not in graph:
+        graph[v] = set()
+    graph[v].add(u)
 
+
+def apply_to_graph(net: PetriNet, net_source: PetriNet.Place, net_sink: PetriNet.Place, linked_pairs: Iterable[Tuple[NetNode, NetNode]], parameters: Optional[Dict[Any, Any]] = None, variant: Variants = Variants.DEFAULT_ALGO) -> List[Hammock]:
+    cr_graph = {}  # linked_pairs -> graph
+    nodes_to_cover = set()
+
+    for u, v in linked_pairs:
+        nodes_to_cover.add(u)
+        nodes_to_cover.add(v)
+        _add_edge(u, v, cr_graph)
+
+    # special case for transitions sharing the same label
+    trans_by_label = {}
+    for trans in net.transitions:
+        if trans.label is None:
+            continue
+        if trans.label not in trans_by_label:
+            trans_by_label[trans.label] = []
+        trans_by_label[trans.label].append(trans)
+    for transitions_with_same_label in trans_by_label.values():
+        for i in range(1, len(transitions_with_same_label)):
+            _add_edge(transitions_with_same_label[i-1], transitions_with_same_label[i], cr_graph)
+    # ––––––––––––––––––––––––––––––––––––––––––––––––
+
+    cr_graph_nodes = set(cr_graph.keys())
     hammocks = {}  # {node : covering hammock}
-    for uncovered_node in cr_graph_nodes:
+    for uncovered_node in nodes_to_cover:
         if uncovered_node in hammocks:
             continue
 
