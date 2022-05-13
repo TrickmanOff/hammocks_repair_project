@@ -137,26 +137,14 @@ def visualize_hammocks_replacement_repair(net, init_marking, final_marking, log,
                                                                              prerepaired_net_filename)
         stats['time']['prerepair'] += wall_time
 
-    should_recalculate_alignments = False
-    supress_logonly_in_alignments = exec_utils.get_param_value(
-        hammocks_replacement.Parameters.SUPRESS_LOGONLY_IN_ALIGNMENTS, parameters, True)
-    if prerepair_variant is None:
-        if alignments is None:
-            should_recalculate_alignments = True
-    elif supress_logonly_in_alignments:
-        if prerepair_variant == hammocks_replacement.PrerepairVariants.NAIVE_LOG_ONLY.value:
-            if parameters.get(naive_log_only.Parameters.ALIGNMENTS_MODIFICATION_MODE,
-                              naive_log_only.DEFAULT_MODIFY_ALIGNMENTS_MODE) is naive_log_only.AlignmentsModificationMode.NONE:
-                should_recalculate_alignments = True
-        # hardcode for each possible prerepair_variants (that's probably not the best solution)
+    # hardcode for each possible prerepair_variants (that's probably not the best solution)
+    if prerepair_variant == hammocks_replacement.PrerepairVariants.NAIVE_LOG_ONLY.value:
+        if parameters.get(hammocks_replacement.naive_log_only_algo.Parameters.ALIGNMENTS_MODIFICATION_MODE,
+                          hammocks_replacement.naive_log_only_algo.DEFAULT_MODIFY_ALIGNMENTS_MODE) == hammocks_replacement.naive_log_only_algo.AlignmentsModificationMode.NONE:
+            alignments = None
 
-    if should_recalculate_alignments:
+    if alignments is None:
         print('alignments were recalculated')
-        supress_logonly_in_alignments = exec_utils.get_param_value(
-            hammocks_replacement.Parameters.SUPRESS_LOGONLY_IN_ALIGNMENTS, parameters, True)
-        if supress_logonly_in_alignments:
-            print('  using custom cost function')
-            parameters = hammocks_replacement._use_custom_cost_function(net, alignments, parameters)
         wall_time, alignments = timeit(alignments_algo.apply_log)(log, net, init_marking, final_marking,
                                                                   parameters=alignments_parameters)
         stats['time']['alignments'] += wall_time

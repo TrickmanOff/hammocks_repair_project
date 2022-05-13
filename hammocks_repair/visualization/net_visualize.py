@@ -33,11 +33,14 @@ def paint_nodes(nodes_set, color=DEFAULT_NODES_COLOR, decorations=None):
     return decorations
 
 
-def visualize_hammocks(net, hammocks, covered_set):
+def visualize_hammocks(net, hammocks, covered_set, initial_marking=None, final_marking=None):
     '''
     highlights each hammock with its source and sink
     paint all nodes from the covered_set to red
     '''
+    initial_marking = {} if initial_marking is None else initial_marking
+    final_marking = {} if final_marking is None else final_marking
+
     decorations = {}
     for hammock in hammocks:
         decorations[hammock.source] = {'color': HAMMOCK_SOURCE_COLOR,
@@ -49,7 +52,7 @@ def visualize_hammocks(net, hammocks, covered_set):
                                   color=HAMMOCK_OTHER_COLOR, decorations=decorations)
         decorations = paint_nodes(covered_set,
                                   color=COVERED_COLOR, decorations=decorations)
-    return visualize.apply(net, initial_marking={}, final_marking={}, decorations=decorations)
+    return visualize.apply(net, initial_marking=initial_marking, final_marking=final_marking, decorations=decorations)
 
 
 def copy_marking(marking, net):
