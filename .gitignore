@@ -3,7 +3,7 @@ __pycache__/
 .DS_Store
 *.txt
 *.png
-hammocks_repair/grader/tests
+grader/tests
 images
 stats.sh
 

@@ -5,11 +5,10 @@ from pm4py.objects.petri_net.obj import PetriNet, Marking
 from pm4py.objects.petri_net.utils import petri_utils
 from pm4py.util import typing
 
-from hammocks_repair.utils.pn_typing import NetNode
+from utils.pn_typing import NetNode
 
 
-# TODO: move to utils?
-def format_alignment(alignment: Sequence[Tuple[Tuple[str, str], Tuple[str, str]]]) -> Dict[str, Sequence[Union[str, Tuple[str, str]]]]:
+def _format_alignment(alignment: Sequence[Tuple[Tuple[str, str], Tuple[str, str]]]) -> Dict[str, Sequence[Union[str, Tuple[str, str]]]]:
     """
     Convert the alignment to dict (for convenience of further use)
 
@@ -115,6 +114,8 @@ def apply(net: PetriNet, initial_marking: Marking, final_marking: Marking, align
 
     Parameters
     ------------
+    net, initial_marking, final_marking
+        A WF-net to be analyzed
     aligned_traces
         a result of applying the alignments algo to some log and the `net`
         format of each aligned trace:
@@ -136,7 +137,7 @@ def apply(net: PetriNet, initial_marking: Marking, final_marking: Marking, align
     bad_pairs = {}
 
     for aligned_trace in aligned_traces:
-        alignment = format_alignment(aligned_trace['alignment'])
+        alignment = _format_alignment(aligned_trace['alignment'])
         cur_bad_pairs = _select_bad_pairs(net, alignment, initial_marking, final_marking)
         for plc, cnt in cur_bad_pairs.items():
             if plc in bad_pairs:

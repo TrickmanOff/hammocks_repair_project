@@ -1,8 +1,8 @@
 from . import grader
-import hammocks_repair.examples.bad_pairs_hammocks_covering as bad_pairs_hammocks_covering
+import examples.bad_pairs_hammocks_covering as bad_pairs_hammocks_covering
 import hammocks_repair.hammocks_covering.algorithm as hammocks_covering_algo
 import hammocks_repair.net_repair.hammocks_replacement.algorithm as hammocks_replacement_algo
-from hammocks_repair.utils import net_helpers
+from utils import net_helpers
 
 from pm4py.util import exec_utils
 from pm4py.objects.conversion.log import converter
@@ -19,7 +19,7 @@ from pm4py.visualization.petri_net import visualizer as pn_visualizer
 from pm4py.visualization.petri_net.common import visualize
 
 from hammocks_repair.hammocks_covering.obj import Hammock
-from hammocks_repair.visualization import net_visualize
+from visualization import net_visualize
 
 NodeTypes = hammocks_covering_algo.NodeTypes
 
@@ -28,10 +28,9 @@ import pm4py
 from typing import Union, List, Dict, Tuple, Set
 import numpy as np
 import os
-import shutil
 import pandas as pd
 import random
-from copy import copy, deepcopy
+from copy import copy
 from enum import Enum
 
 '''
@@ -416,8 +415,9 @@ def worsen_net_in_hammocks(net, initial_marking, final_marking, variant: Worseni
 
     # hammocks visualization
     if visualization_dir is not None:
-        pn_visualizer.save(net_visualize.visualize_hammocks(net, hammocks, {}, initial_marking=initial_marking, final_marking=final_marking),
-                           os.path.join(visualization_dir, 'chosen_hammocks.png'))
+        pn_visualizer.save(
+            net_visualize.visualize_hammocks(net, hammocks, {}, initial_marking=initial_marking, final_marking=final_marking),
+            os.path.join(visualization_dir, 'chosen_hammocks.png'))
 
     decorations = {}
     for i, ham in enumerate(hammocks):

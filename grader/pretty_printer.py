@@ -3,7 +3,7 @@ import pandas as pd
 import os
 from tabulate import tabulate
 
-from hammocks_repair.grader import grader
+from grader import grader
 
 
 def pretty_print(dir, out_file):

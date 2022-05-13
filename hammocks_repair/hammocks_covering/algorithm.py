@@ -8,7 +8,7 @@ from pm4py.util import exec_utils
 from hammocks_repair.hammocks_covering.obj import Hammock
 from hammocks_repair.hammocks_covering.variants import minimal_hammock
 from hammocks_repair.hammocks_covering.variants.minimal_hammock import NodeTypes
-from hammocks_repair.utils.pn_typing import NetNode
+from utils.pn_typing import NetNode
 
 
 class Variants(Enum):
@@ -60,16 +60,16 @@ def apply(net: PetriNet, covered_nodes: Union[Sequence[NetNode], Iterable[Tuple[
     net_sink = check_soundness.check_sink_place_presence(net)
 
     if as_pairs:
-        return apply_to_graph(net, net_source, net_sink, covered_nodes, parameters, variant)
+        return _apply_to_graph(net, net_source, net_sink, covered_nodes, parameters, variant)
     else:
-        return apply_to_set(net, net_source, net_sink, covered_nodes, parameters, variant)
+        return _apply_to_set(net, net_source, net_sink, covered_nodes, parameters, variant)
 
 
-def apply_to_set(net: PetriNet, net_source: PetriNet.Place, net_sink: PetriNet.Place, covered_nodes: Sequence[NetNode], parameters: Optional[Dict[Any, Any]] = None, variant: Variants = Variants.DEFAULT_ALGO) -> Hammock:
+def _apply_to_set(net: PetriNet, net_source: PetriNet.Place, net_sink: PetriNet.Place, covered_nodes: Sequence[NetNode], parameters: Optional[Dict[Any, Any]] = None, variant: Variants = Variants.DEFAULT_ALGO) -> Hammock:
     linked_pairs = []
     for i in range(1, len(covered_nodes)):
         linked_pairs.append((covered_nodes[i-1], covered_nodes[i]))
-    return apply_to_graph(net, net_source, net_sink, linked_pairs, parameters)[0]
+    return _apply_to_graph(net, net_source, net_sink, linked_pairs, parameters)[0]
 
 
 def _get_component(graph, v):  # bfs
@@ -95,7 +95,7 @@ def _add_edge(u, v, graph):
     graph[v].add(u)
 
 
-def apply_to_graph(net: PetriNet, net_source: PetriNet.Place, net_sink: PetriNet.Place, linked_pairs: Iterable[Tuple[NetNode, NetNode]], parameters: Optional[Dict[Any, Any]] = None, variant: Variants = Variants.DEFAULT_ALGO) -> List[Hammock]:
+def _apply_to_graph(net: PetriNet, net_source: PetriNet.Place, net_sink: PetriNet.Place, linked_pairs: Iterable[Tuple[NetNode, NetNode]], parameters: Optional[Dict[Any, Any]] = None, variant: Variants = Variants.DEFAULT_ALGO) -> List[Hammock]:
     cr_graph = {}  # linked_pairs -> graph
     nodes_to_cover = set()
 

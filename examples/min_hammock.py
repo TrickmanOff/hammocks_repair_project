@@ -1,12 +1,12 @@
-from hammocks_repair.examples import test_net
+from examples import test_net
 from pm4py.visualization.petri_net import visualizer as pn_visualizer
-from hammocks_repair.utils.net_helpers import find_transition
+from utils.net_helpers import find_transition
 from hammocks_repair.hammocks_covering import algorithm as hammocks_covering
-from hammocks_repair.visualization import net_visualize
+from visualization import net_visualize
 from pm4py.objects.conversion.log import converter
 from pm4py.algo.simulation.playout.petri_net import algorithm as pn_playout
 from pm4py.algo.filtering.pandas.end_activities import end_activities_filter
-from hammocks_repair.utils import net_helpers
+from utils import net_helpers
 from hammocks_repair.conformance_analysis import bad_pairs_selection
 
 net, init_marking, final_marking = test_net.create_net()

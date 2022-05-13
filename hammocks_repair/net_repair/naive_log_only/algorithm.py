@@ -8,7 +8,7 @@ from pm4py.objects.log.obj import EventLog, EventStream
 from pm4py.objects.petri_net.obj import PetriNet, Marking
 from pm4py.objects.petri_net.utils import petri_utils, check_soundness
 
-from hammocks_repair.utils import net_helpers
+from utils import net_helpers
 
 
 class Parameters(Enum):

@@ -1,8 +1,7 @@
 from .metrics import graph_edit_similarity, graph_edit_similarity_prom
 from . import utils
 
-from hammocks_repair.examples import bad_pairs_hammocks_covering
-from hammocks_repair.net_repair.hammocks_replacement import algorithm as hammocks_replacement_algo
+from examples import bad_pairs_hammocks_covering
 
 #
 from pm4py.algo.conformance.alignments.petri_net import algorithm as alignments_algo
@@ -20,7 +19,6 @@ from pm4py.objects.petri_net.exporter import exporter as pnml_exporter
 
 from typing import Set
 from enum import Enum
-import time
 import pm4py
 import os
 import json
@@ -253,7 +251,8 @@ def grade(test_dirs, forced_grade=False, metrics_used: Set[Metrics] = DEFAULT_ME
             if Metrics.EDIT_SIM_APPROX in metrics_used:
                 logging.info('Calculating graph edit similarity approximation...')
                 stats['graph_edit_similarity_approx'] = {}
-                stats['graph_edit_similarity_approx']['to_given'] = round(graph_edit_similarity.pn_edit_similarity(rep_net, given_net, we=1, wn=1, ws=1, exec_timeout=180), 3)
+                stats['graph_edit_similarity_approx']['to_given'] = round(
+                    graph_edit_similarity.pn_edit_similarity(rep_net, given_net, we=1, wn=1, ws=1, exec_timeout=180), 3)
                 add_data_to_grade_info(test_dir, repair_method_name, stats)
 
             # graph edit similarity
