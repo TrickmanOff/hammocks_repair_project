@@ -18,11 +18,19 @@ from pm4py.objects.log.importer.xes import importer as xes_importer
 from pm4py.objects.petri_net.importer import importer as pnml_importer
 from pm4py.objects.petri_net.exporter import exporter as pnml_exporter
 
+from typing import Set
 from enum import Enum
 import time
 import pm4py
 import os
 import json
+import logging
+
+logging.basicConfig(
+         format='%(asctime)s %(levelname)-8s %(message)s',
+         level=logging.INFO,
+         datefmt='%H:%M:%S')
+
 
 NET_EXT = '.pnml'
 GIVEN_NET_FILENAME = 'given_net'
@@ -102,11 +110,12 @@ def footprints_similarity(net1, net1_im, net1_fm, net2, net2_im, net2_fm):
     fp_net1 = footprints_discovery.apply(net1, net1_im, net1_fm)
     fp_net2 = footprints_discovery.apply(net2, net2_im, net2_fm)
 
-    total_matr_size = len(fp_net1['activities'])**2
-    seq_rel_diff_cnt = len(fp_net1['sequence'].difference(fp_net2['sequence'])) + len(fp_net2['sequence'].difference(fp_net1['sequence']))
-    par_rel_diff_cnt = len(fp_net1['parallel'].difference(fp_net2['parallel'])) + len(fp_net2['parallel'].difference(fp_net1['parallel']))
+    total_pairs_cnt = len(fp_net1['activities'].union(fp_net2['activities']))**2
+    diff_status_pairs_cnt = len(fp_net1['sequence'].difference(fp_net2['sequence']))
+    diff_status_pairs_cnt += len(fp_net1['parallel'].difference(fp_net2['parallel']))
+    diff_status_pairs_cnt += len(fp_net2['sequence'].union(fp_net2['parallel']).difference(fp_net1['sequence']).difference(fp_net1['parallel']))
 
-    return 1. - (seq_rel_diff_cnt + par_rel_diff_cnt) / total_matr_size
+    return 1. - diff_status_pairs_cnt / total_pairs_cnt
 
 
 def rediscovery_time(log):
@@ -132,9 +141,10 @@ class Metrics(Enum):
     PRECISION = 'precision'
     FOOTPRINTS_SIM = 'footprints_similarity'
     EDIT_SIM = 'graph_edit_similarity'
+    EDIT_SIM_APPROX = 'graph_edit_similarity_approx'
 
 
-ALL_METRICS = frozenset([Metrics.FITNESS, Metrics.PRECISION, Metrics.FOOTPRINTS_SIM, Metrics.EDIT_SIM])
+ALL_METRICS = frozenset([Metrics.FITNESS, Metrics.PRECISION, Metrics.FOOTPRINTS_SIM, Metrics.EDIT_SIM, Metrics.EDIT_SIM_APPROX])
 DEFAULT_METRICS_USED = ALL_METRICS
 
 
@@ -151,7 +161,7 @@ def get_net_stats(net):
     return stats
 
 
-def grade(test_dirs, forced_grade=False, metrics_used=DEFAULT_METRICS_USED):
+def grade(test_dirs, forced_grade=False, metrics_used: Set[Metrics] = DEFAULT_METRICS_USED, graded_methods: Set[str] =None):
     '''
     :param paths:
         paths to the tests
@@ -185,11 +195,15 @@ def grade(test_dirs, forced_grade=False, metrics_used=DEFAULT_METRICS_USED):
         repaired_dir_path = os.path.join(test_dir, REPAIRED_NETS_DIR_NAME)
         for repaired_net_filename in os.listdir(repaired_dir_path):
             repair_method_name, ext = os.path.splitext(repaired_net_filename)
+
+            if graded_methods is not None and repair_method_name not in graded_methods:
+                continue
+
             repaired_net_filepath = os.path.join(repaired_dir_path, repaired_net_filename)
 
             if ext != NET_EXT:
                 continue
-            print(f'=== Grading {repair_method_name} ===')
+            logging.info(f'=== Grading {repair_method_name} in {test_dir} ===')
 
             # check time
             try:  # i'm sooo bad
@@ -211,7 +225,7 @@ def grade(test_dirs, forced_grade=False, metrics_used=DEFAULT_METRICS_USED):
 
             # fitness (token-based replay)
             if Metrics.FITNESS in metrics_used:
-                print('Calculating fitness...')
+                logging.info('Calculating fitness...')
                 fitness = log_fitness(log, rep_net, rep_im, rep_fm)
                 stats['fitness'] = {}
                 stats['fitness']['perc_fit_traces'] = fitness['percentage_of_fitting_traces']
@@ -220,29 +234,35 @@ def grade(test_dirs, forced_grade=False, metrics_used=DEFAULT_METRICS_USED):
 
             # footprints similarity
             if Metrics.FOOTPRINTS_SIM in metrics_used:
-                print('Calculating footprints similarity...')
+                logging.info('Calculating footprints similarity...')
                 stats['footprints_similarity'] = {}
-                fp_similarity_to_perfect = footprints_similarity(rep_net, rep_im, rep_fm, perfect_net, perfect_im, perfect_fm)
-                stats['footprints_similarity']['to_perfect'] = round(fp_similarity_to_perfect, 3)
+                # fp_similarity_to_perfect = footprints_similarity(rep_net, rep_im, rep_fm, perfect_net, perfect_im, perfect_fm)
+                # stats['footprints_similarity']['to_perfect'] = round(fp_similarity_to_perfect, 3)
                 fp_similarity_to_given = footprints_similarity(rep_net, rep_im, rep_fm, given_net, given_im, given_fm)
                 stats['footprints_similarity']['to_given'] = round(fp_similarity_to_given, 3)
                 add_data_to_grade_info(test_dir, repair_method_name, stats)
 
-            # graph edit similarity
-            if Metrics.EDIT_SIM in metrics_used:
-                print('Calculating graph edit similarity...')
-                stats['graph_edit_similarity'] = {}
-                # stats['graph_edit_similarity']['to_perfect'] = round(graph_edit_similarity_prom.sim_dist_prom(repaired_net_filepath, perfect_net_filepath), 3)
-                stats['graph_edit_similarity']['to_given'] = round(graph_edit_similarity_prom.sim_dist_prom(repaired_net_filepath, given_net_filepath), 3)
-                # stats['graph_edit_similarity']['to_perfect'] = round(graph_edit_similarity.pn_edit_similarity(rep_net, perfect_net, we=1, wn=1, ws=1), 3)
-                # stats['graph_edit_similarity']['to_given'] = round(graph_edit_similarity.pn_edit_similarity(rep_net, given_net, we=1, wn=1, ws=1), 3)
-                add_data_to_grade_info(test_dir, repair_method_name, stats)
-
             # precision
             if Metrics.PRECISION in metrics_used:
-                print('Calculating precision...')
+                logging.info('Calculating precision...')
                 stats['precision'] = {}
                 stats['precision']['precision'] = round(precision_evaluator.apply(log, rep_net, rep_im, rep_fm, variant=precision_evaluator.Variants.ALIGN_ETCONFORMANCE), 3)
+                add_data_to_grade_info(test_dir, repair_method_name, stats)
+
+            # graph edit similarity approximation
+            if Metrics.EDIT_SIM_APPROX in metrics_used:
+                logging.info('Calculating graph edit similarity approximation...')
+                stats['graph_edit_similarity_approx'] = {}
+                stats['graph_edit_similarity_approx']['to_given'] = round(graph_edit_similarity.pn_edit_similarity(rep_net, given_net, we=1, wn=1, ws=1, exec_timeout=180), 3)
+                add_data_to_grade_info(test_dir, repair_method_name, stats)
+
+            # graph edit similarity
+            if Metrics.EDIT_SIM in metrics_used:
+                logging.info('Calculating graph edit similarity...')
+                stats['graph_edit_similarity'] = {}
+                stats['graph_edit_similarity']['to_given'] = round(
+                    graph_edit_similarity_prom.sim_dist_prom(repaired_net_filepath,
+                                                             given_net_filepath), 3)
                 add_data_to_grade_info(test_dir, repair_method_name, stats)
 
             # net stats
@@ -304,7 +324,7 @@ def apply_hammocks_repair(test_dirs, repair_method_name='default_hammocks_replac
 
 def apply_complete_rediscovery(test_dirs, repair_method_name='complete_rediscovery'):
     for test_dir in test_dirs:
-        print(f'=== {repair_method_name} for {test_dir} ===')
+        logging.info(f'=== {repair_method_name} for {test_dir} ===')
         given_net, given_im, given_fm, perfect_net, perfect_im, perfect_fm, log = load_test_dir(test_dir)
 
         wall_time, (rep_net, rep_im, rep_fm) = utils.timeit(inductive_miner.apply)(log)
