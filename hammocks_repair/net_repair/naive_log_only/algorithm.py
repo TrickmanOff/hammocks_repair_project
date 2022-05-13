@@ -171,15 +171,6 @@ def apply(net: PetriNet, initial_marking: Marking, final_marking: Marking,
     for st_plc in list(initial_marking.keys()):
         if st_plc.in_arcs:
             new_st_plc = petri_utils.add_place(net)
-            st_in_trans_names = set()
-            for in_arc in st_plc.in_arcs:
-                trans = in_arc.source
-                st_in_trans_names.add(trans.name)
-                out_arc = net_helpers.find_arc(st_plc.name, trans.name, net)
-                st_plc.out_arcs.remove(out_arc)  # delete out_arc
-                trans.in_arcs.remove(out_arc)
-
-                petri_utils.add_arc_from_to(new_st_plc, trans, net)
 
             hidden_trans = petri_utils.add_transition(net)
             petri_utils.add_arc_from_to(new_st_plc, hidden_trans, net)
@@ -189,7 +180,7 @@ def apply(net: PetriNet, initial_marking: Marking, final_marking: Marking,
                 alignment = alignment_info['alignment']
                 (_, model_name) = alignment[0][0]
 
-                if model_name not in st_in_trans_names and model_name != hidden_trans.name:
+                if model_name != hidden_trans.name:
                     alignment.insert(0, ((None, hidden_trans.name), ('>>', None)))
 
             initial_marking[new_st_plc] = initial_marking[st_plc]
@@ -198,15 +189,6 @@ def apply(net: PetriNet, initial_marking: Marking, final_marking: Marking,
     for end_plc in list(final_marking.keys()):
         if end_plc.out_arcs:
             new_end_plc = petri_utils.add_place(net)
-            end_out_trans_names = set()
-            for out_arc in end_plc.out_arcs:
-                trans = out_arc.target
-                end_out_trans_names.add(trans.name)
-                in_arc = net_helpers.find_arc(trans.name, end_plc.name, net)
-                end_plc.in_arcs.remove(in_arc)  # delete in_arc
-                trans.out_arcs.remove(in_arc)
-
-                petri_utils.add_arc_from_to(trans, new_end_plc, net)
 
             hidden_trans = petri_utils.add_transition(net)
             petri_utils.add_arc_from_to(end_plc, hidden_trans, net)
@@ -216,7 +198,7 @@ def apply(net: PetriNet, initial_marking: Marking, final_marking: Marking,
                 alignment = alignment_info['alignment']
                 (_, model_name) = alignment[-1][0]
 
-                if model_name not in end_out_trans_names and model_name != hidden_trans.name:
+                if model_name != hidden_trans.name:
                     alignment.append(((None, hidden_trans.name), ('>>', None)))
 
             final_marking[new_end_plc] = final_marking[end_plc]

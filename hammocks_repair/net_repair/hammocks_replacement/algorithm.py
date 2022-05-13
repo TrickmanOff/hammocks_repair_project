@@ -27,7 +27,6 @@ class Parameters(Enum):
     SUBPROCESS_MINER_ALGO = 'hammocks_replacement_subprocess_miner_algo'  # any algorithm
     SUBPROCESS_MINER_ALGO_VARIANT = 'hammocks_replacement_subprocess_miner_algo_variant'
     PREREPAIR_VARIANT = 'hammocks_replacement_prerepair_variant'  # from PrerepairVariants
-    SUPRESS_LOGONLY_IN_ALIGNMENTS = 'hammocks_replacement_supress_logonly_in_alignments'  # True/False
 
     LOG_ACTIVITY_KEY = pm4_constants.PARAMETER_CONSTANT_ACTIVITY_KEY
     LOG_CASE_KEY = pm4_constants.PARAMETER_CONSTANT_CASEID_KEY
@@ -126,7 +125,7 @@ def replace_hammock(net: PetriNet, initial_marking: Marking, final_marking: Mark
 
     if isinstance(hammock.source, PetriNet.Transition):
         if len(subprocess_source.out_arcs) == 1:
-            new_subprocess_source = next(iter(subprocess_source.out_arcs))
+            new_subprocess_source = next(iter(subprocess_source.out_arcs)).target
             net_helpers.remove_node(subprocess_net, subprocess_source)
             subprocess_source = new_subprocess_source
         else:
@@ -136,7 +135,7 @@ def replace_hammock(net: PetriNet, initial_marking: Marking, final_marking: Mark
 
     if isinstance(hammock.sink, PetriNet.Transition):
         if len(subprocess_sink.in_arcs) == 1:
-            new_subprocess_sink = next(iter(subprocess_sink.in_arcs))
+            new_subprocess_sink = next(iter(subprocess_sink.in_arcs)).source
             net_helpers.remove_node(subprocess_net, subprocess_sink)
             subprocess_sink = new_subprocess_sink
         else:
@@ -172,40 +171,6 @@ def replace_hammock(net: PetriNet, initial_marking: Marking, final_marking: Mark
     return net, initial_marking, final_marking
 
 
-def _use_custom_cost_function(net: PetriNet):
-    """
-    Return parameters with custom cost function for calculating alignments
-
-    needs to be checked
-    """
-
-    """
-    Reminder of the alignments cost function parameters:
-        Parameters.PARAM_SYNC_COST_FUNCTION -> mapping of each transition in the model to corresponding synchronous costs
-        Parameters.PARAM_MODEL_COST_FUNCTION -> mapping of each transition in the model to corresponding model cost
-        Parameters.PARAM_TRACE_COST_FUNCTION -> mapping of each index of the trace to a positive cost value
-    """
-    raise NotImplementedError("Currently not supported")
-
-    model_cost_function = {}
-    sync_cost_function = {}
-    for trans in net.transitions:
-        if trans.label is not None:
-            model_cost_function[trans] = 100
-            sync_cost_function[trans] = 0
-        else:
-            model_cost_function[trans] = 1
-
-    max_trace_len = 2000
-    trace_cost_function = [10000] * max_trace_len
-
-    alignments_parameters = {}
-    alignments_parameters[alignments_algo.Parameters.PARAM_MODEL_COST_FUNCTION] = model_cost_function
-    alignments_parameters[alignments_algo.Parameters.PARAM_SYNC_COST_FUNCTION] = sync_cost_function
-    alignments_parameters[alignments_algo.Parameters.PARAM_TRACE_COST_FUNCTION] = trace_cost_function
-    return alignments_parameters
-
-
 def apply(net: PetriNet, initial_marking: Marking, final_marking: Marking,
           log: Union[pd.DataFrame, EventLog, EventStream], alignments: Union[typing.AlignmentResult, typing.ListAlignments]=None,
           parameters: Optional[Dict[Any, Any]] = None) -> Tuple[PetriNet, Marking, Marking]:
@@ -228,7 +193,6 @@ def apply(net: PetriNet, initial_marking: Marking, final_marking: Marking,
         Parameters.SUBPROCESS_MINER_ALGO -> A process discovery algorithm to be used for discovering a subprocess (apply() method is used)
         Parameters.SUBPROCESS_MINER_ALGO_VARIANT -> A variant of the process discovery algorithm to be used
         Parameters.PREREPAIR_VARIANT -> An algorithm from PrerepairVariants to be used before applying hammocks replacement, None if no prerepair should be used
-        Parameters.SUPRESS_LOGONLY_IN_ALIGNMENTS ->
         Parameters.LOG_ACTIVITY_KEY -> The name of the attribute to be used as activity for process discovery
         Parameters.LOG_CASE_KEY -> The name of the attribute to be used as case identifier
 
@@ -261,9 +225,6 @@ def apply(net: PetriNet, initial_marking: Marking, final_marking: Marking,
                 alignments = None
 
     if alignments is None:
-        supress_logonly_in_alignments = exec_utils.get_param_value(Parameters.SUPRESS_LOGONLY_IN_ALIGNMENTS, parameters, True)
-        if supress_logonly_in_alignments:
-            alignments_parameters.update(_use_custom_cost_function(net))
         alignments = alignments_algo.apply_log(log, net, initial_marking, final_marking, parameters=alignments_parameters)
 
     bad_pairs = bad_pairs_selection.apply(net, initial_marking, final_marking, alignments)

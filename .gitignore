@@ -1,7 +1,7 @@
 .idea
 __pycache__/
 .DS_Store
-tmp.txt
+*.txt
 *.png
 hammocks_repair/grader/tests
 images
