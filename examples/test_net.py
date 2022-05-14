@@ -1,7 +1,7 @@
 from pm4py.objects.petri_net.obj import PetriNet, Marking
 from pm4py.objects.petri_net.utils import petri_utils
-from utils.net_helpers import add_transition
-from utils import net_helpers
+from hammocks_repair.utils.net_helpers import add_transition
+from hammocks_repair.utils import net_helpers
 from enum import Enum
 from pm4py.util import exec_utils
 

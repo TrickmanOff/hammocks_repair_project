@@ -8,7 +8,7 @@ from pm4py.util import exec_utils
 from hammocks_repair.hammocks_covering.obj import Hammock
 from hammocks_repair.hammocks_covering.variants import minimal_hammock
 from hammocks_repair.hammocks_covering.variants.minimal_hammock import NodeTypes
-from utils.pn_typing import NetNode
+from hammocks_repair.utils.pn_typing import NetNode
 
 
 class Variants(Enum):

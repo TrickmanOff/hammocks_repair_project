@@ -2,7 +2,7 @@ from . import grader
 import examples.bad_pairs_hammocks_covering as bad_pairs_hammocks_covering
 import hammocks_repair.hammocks_covering.algorithm as hammocks_covering_algo
 import hammocks_repair.net_repair.hammocks_replacement.algorithm as hammocks_replacement_algo
-from utils import net_helpers
+from hammocks_repair.utils import net_helpers
 
 from pm4py.util import exec_utils
 from pm4py.objects.conversion.log import converter

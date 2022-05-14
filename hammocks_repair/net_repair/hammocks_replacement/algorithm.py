@@ -14,7 +14,7 @@ from pm4py.util import exec_utils, xes_constants, typing, constants as pm4_const
 
 from hammocks_repair.conformance_analysis import bad_pairs_selection
 from hammocks_repair.hammocks_covering import algorithm as hammocks_covering
-from utils import net_helpers
+from hammocks_repair.utils import net_helpers
 import hammocks_repair.net_repair.naive_log_only.algorithm as naive_log_only_algo
 
 Hammock = hammocks_covering.Hammock

@@ -2,7 +2,7 @@ import unittest
 
 from examples import test_net
 from hammocks_repair.conformance_analysis import bad_pairs_selection
-from utils import net_helpers
+from hammocks_repair.utils import net_helpers
 
 
 def _get_nodes_by_names(net, names):

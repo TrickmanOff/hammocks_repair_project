@@ -4,7 +4,7 @@ from hammocks_repair.hammocks_covering.variants import minimal_hammock
 from hammocks_repair.hammocks_covering import algorithm as hammocks_covering_algo
 from hammocks_repair.hammocks_covering.obj import Hammock
 from examples import test_net
-from utils import net_helpers
+from hammocks_repair.utils import net_helpers
 
 NodeTypes = minimal_hammock.NodeTypes
 

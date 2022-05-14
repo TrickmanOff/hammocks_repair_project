@@ -5,7 +5,7 @@ from pm4py.objects.petri_net.obj import PetriNet, Marking
 from pm4py.objects.petri_net.utils import petri_utils
 from pm4py.util import typing
 
-from utils.pn_typing import NetNode
+from hammocks_repair.utils.pn_typing import NetNode
 
 
 def _format_alignment(alignment: Sequence[Tuple[Tuple[str, str], Tuple[str, str]]]) -> Dict[str, Sequence[Union[str, Tuple[str, str]]]]:
