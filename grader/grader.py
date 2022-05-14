@@ -1,7 +1,7 @@
 from .metrics import graph_edit_similarity, graph_edit_similarity_prom
 from . import utils
 
-from ..examples import bad_pairs_hammocks_covering
+from examples import bad_pairs_hammocks_covering
 
 #
 from pm4py.algo.conformance.alignments.petri_net import algorithm as alignments_algo

@@ -1,9 +1,9 @@
-from ..examples import test_net
+from . import test_net
 from pm4py.algo.simulation.playout.petri_net import algorithm as pn_playout
 from pm4py.algo.filtering.pandas.end_activities import end_activities_filter
 from pm4py.objects.conversion.log import converter
 from hammocks_repair.utils import net_helpers
-from ..visualization import net_visualize
+from visualization import net_visualize
 from pm4py.visualization.petri_net import visualizer as pn_visualizer
 from pm4py.visualization.petri_net.common import visualize
 from .test_net import Variants
@@ -19,7 +19,7 @@ from pm4py.algo.conformance.alignments.petri_net import algorithm as alignments_
 
 import hammocks_repair.net_repair.hammocks_replacement.algorithm as hammocks_replacement
 import hammocks_repair.net_repair.naive_log_only.algorithm as naive_log_only
-from ..grader.utils import timeit
+from grader.utils import timeit
 
 import time
 import os
