@@ -1,24 +1,35 @@
 import pandas as pd
 
+from typing import List
 import os
 from tabulate import tabulate
 
-from grader import grader
+from . import grader
 
 
-def pretty_print(dir, out_file):
-    subdirs = [subdir for subdir in os.listdir(dir) if not subdir.startswith('.') and os.access(dir, os.R_OK)]
-    subdirs.sort()
+def pretty_print(test_dirs: List[str], out_file: str):
+    """
+    Pretty prints info from grade_info.json for each test directory to the specified file
+
+    Parameters
+    ------------
+    test_dirs
+        list of test directories
+        format of each directory is specified in ./grader
+    out_file
+        file to store the results
+    """
 
     rows = []
     repair_methods = ['given_net', 'default_hammocks_replacement', 'complete_rediscovery']
 
-    for subdir in subdirs:
-        grade_info = grader.load_grade_info(os.path.join(dir, subdir))
+    for test_dir in test_dirs:
+        grade_info = grader.load_grade_info(os.path.join(test_dir))
+        test_name = os.path.basename(os.path.normpath(test_dir))
 
         for method in repair_methods:
             row = {}
-            row['name'] = subdir
+            row['name'] = test_name
             row['method'] = method
 
             # fitness

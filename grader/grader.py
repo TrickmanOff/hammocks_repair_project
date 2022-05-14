@@ -1,7 +1,7 @@
 from .metrics import graph_edit_similarity, graph_edit_similarity_prom
 from . import utils
 
-from examples import bad_pairs_hammocks_covering
+from ..examples import bad_pairs_hammocks_covering
 
 #
 from pm4py.algo.conformance.alignments.petri_net import algorithm as alignments_algo
@@ -17,12 +17,13 @@ from pm4py.objects.log.importer.xes import importer as xes_importer
 from pm4py.objects.petri_net.importer import importer as pnml_importer
 from pm4py.objects.petri_net.exporter import exporter as pnml_exporter
 
-from typing import Set
+from typing import Set, List
 from enum import Enum
 import pm4py
 import os
 import json
 import logging
+import shutil
 
 logging.basicConfig(
          format='%(asctime)s %(levelname)-8s %(message)s',
@@ -40,6 +41,17 @@ REPAIRED_NETS_DIR_NAME = 'repaired_nets'
 VISUALIZATION_DIR_NAME = 'visualization'
 
 GRADE_INFO_FILENAME = 'grade_info.json'
+
+"""
+Test directory format:
+
+test_dir
+    |--- repaired_nets (results of repair)
+          |    |- repaired_net_1.pnml
+          |    |- repaired_net_2.pnml
+          |--- given_net.pnml (initial net to repair)
+          |--- log.xes (log to use for repair)
+"""
 
 
 def load_grade_info(test_dir):
@@ -125,8 +137,13 @@ def load_test_dir(test_dir):
     init_test_dir(test_dir)
     given_net, given_im, given_fm = pnml_importer.apply(
         os.path.join(test_dir, GIVEN_NET_FILENAME + NET_EXT))
-    perfect_net, perfect_im, perfect_fm = pnml_importer.apply(
-        os.path.join(test_dir, PERFECT_NET_FILENAME + NET_EXT))
+
+    perfect_net_path = os.path.join(test_dir, PERFECT_NET_FILENAME + NET_EXT)
+    if os.path.exists(perfect_net_path):
+        perfect_net, perfect_im, perfect_fm = pnml_importer.apply(perfect_net_path)
+    else:
+        perfect_net, perfect_im, perfect_fm = None, None, None
+
     log = xes_importer.apply(os.path.join(test_dir, LOG_FOR_REPAIR_FILENAME))
 
     return given_net, given_im, given_fm, \
@@ -159,28 +176,40 @@ def get_net_stats(net):
     return stats
 
 
-def grade(test_dirs, forced_grade=False, metrics_used: Set[Metrics] = DEFAULT_METRICS_USED, graded_methods: Set[str] =None):
-    '''
-    :param paths:
-        paths to the tests
-    :return:
+def grade(test_dirs: List[str], forced_grade=False, metrics_used: Set[Metrics] = DEFAULT_METRICS_USED, graded_methods: Set[str] = None):
+    """
+    Grade repair results in directories by creating grade_info.json in each directory
 
-    grades the nets which were modified after their last grade
-    '''
+    Parameters
+    ------------
+    test_dirs
+        list of test directories
+        format of each directory is specified above
+    forced_grade
+        ignore internal timestamps and recalculate metrics
+    metrics_used
+        set of metrics to be used
+    graded_methods
+        set of names of repaired nets (in repaired_nets subdirectory) to be analysed
+    """
     for test_dir in test_dirs:
         prev_grade_info = load_grade_info(test_dir)
 
         given_net, given_im, given_fm, perfect_net, perfect_im, perfect_fm, log = load_test_dir(test_dir)
         given_net_filepath = os.path.join(test_dir, GIVEN_NET_FILENAME + NET_EXT)
-        perfect_net_filepath = os.path.join(test_dir, PERFECT_NET_FILENAME + NET_EXT)
+
+        given_net_in_repaired_filepath = os.path.join(test_dir, REPAIRED_NETS_DIR_NAME, GIVEN_NET_FILENAME + NET_EXT)
+        if not os.path.exists(given_net_in_repaired_filepath):
+            shutil.copyfile(given_net_filepath, given_net_in_repaired_filepath)
 
         # net stats
         stats = {}
         stats['net_stats'] = get_net_stats(given_net)
         add_data_to_grade_info(test_dir, 'given_net', stats)
 
-        stats['net_stats'] = get_net_stats(perfect_net)
-        add_data_to_grade_info(test_dir, 'perfect_net', stats)
+        if perfect_net is not None:
+            stats['net_stats'] = get_net_stats(perfect_net)
+            add_data_to_grade_info(test_dir, 'perfect_net', stats)
 
         # log stats
         stats = {}
@@ -213,7 +242,8 @@ def grade(test_dirs, forced_grade=False, metrics_used: Set[Metrics] = DEFAULT_ME
                      os.path.join(repaired_dir_path, repaired_net_filename)]
             cur_grade_time = 0
             for filepath in files:
-                cur_grade_time = max(cur_grade_time, int(os.path.getmtime(filepath) * 10000000))
+                if os.path.exists(filepath):
+                    cur_grade_time = max(cur_grade_time, int(os.path.getmtime(filepath) * 10000000))
             if cur_grade_time == prev_grade_time and not forced_grade:
                 print('Grade info is up-to-date')
                 continue
@@ -252,7 +282,7 @@ def grade(test_dirs, forced_grade=False, metrics_used: Set[Metrics] = DEFAULT_ME
                 logging.info('Calculating graph edit similarity approximation...')
                 stats['graph_edit_similarity_approx'] = {}
                 stats['graph_edit_similarity_approx']['to_given'] = round(
-                    graph_edit_similarity.pn_edit_similarity(rep_net, given_net, we=1, wn=1, ws=1, exec_timeout=180), 3)
+                    graph_edit_similarity.pn_edit_similarity(rep_net, given_net, we=1, wn=1, ws=1, exec_timeout=10), 3)
                 add_data_to_grade_info(test_dir, repair_method_name, stats)
 
             # graph edit similarity
@@ -274,10 +304,15 @@ def grade(test_dirs, forced_grade=False, metrics_used: Set[Metrics] = DEFAULT_ME
             add_data_to_grade_info(test_dir, repair_method_name, stats)
 
 
-def init_test_dir(test_dir):
-    '''
-    creates necessary folders
-    '''
+def init_test_dir(test_dir: str):
+    """
+    Initialize a testing directory
+
+    Parameters
+    ------------
+    test_dir
+        name of the directory
+    """
     if not os.path.exists(test_dir):
         os.makedirs(test_dir)
 
@@ -292,12 +327,23 @@ def init_test_dir(test_dir):
 # TODO: написать декоратор для вызова алгоритмов починки ?
 
 
-def apply_hammocks_repair(test_dirs, repair_method_name='default_hammocks_replacement', parameters=None):
-    '''
-    apply the hammocks replacement algorithms to the given tests with parameters
-      saves the repaired net and time/stats info
-      adds visualization for presented nets
-    '''
+def apply_hammocks_repair(test_dirs: List[str], repair_method_name: str = 'default_hammocks_replacement', parameters=None):
+    """
+    Apply the hammocks replacement repair algorithm to the given tests with
+    visualization of intermediate steps.
+    Save some time/statistics information in grade_info.
+    Repaired net will be saved as 'test_dir/repaired_nets/{repair_method_name}.pnml
+
+    Parameters
+    ------------
+    test_dirs
+        list of test directories
+        format of each directory is specified above
+    repair_method_name
+        name of the method for the resulting net file
+    parameters
+        parameters for the repair algorithm
+    """
     for test_dir in test_dirs:
         given_net, given_im, given_fm, perfect_net, perfect_im, perfect_fm, log = load_test_dir(test_dir)
 
@@ -316,12 +362,27 @@ def apply_hammocks_repair(test_dirs, repair_method_name='default_hammocks_replac
         pn_visualizer.save(pn_visualizer.apply(given_net, given_im, given_fm), filepath)
 
         #   the perfect net
-        net, initial_marking, final_marking = pnml_importer.apply(os.path.join(test_dir, PERFECT_NET_FILENAME + NET_EXT))
-        filepath = os.path.join(test_dir, VISUALIZATION_DIR_NAME, PERFECT_NET_FILENAME + '.png')
-        pn_visualizer.save(pn_visualizer.apply(net, initial_marking, final_marking), filepath)
+        perfect_net_path = os.path.join(test_dir, PERFECT_NET_FILENAME + NET_EXT)
+        if os.path.exists(perfect_net_path):
+            net, initial_marking, final_marking = pnml_importer.apply(os.path.join(test_dir, PERFECT_NET_FILENAME + NET_EXT))
+            filepath = os.path.join(test_dir, VISUALIZATION_DIR_NAME, PERFECT_NET_FILENAME + '.png')
+            pn_visualizer.save(pn_visualizer.apply(net, initial_marking, final_marking), filepath)
 
 
-def apply_complete_rediscovery(test_dirs, repair_method_name='complete_rediscovery'):
+def apply_complete_rediscovery(test_dirs: List[str], repair_method_name: str = 'complete_rediscovery'):
+    """
+    Apply the complete rediscovery algorithm to the given tests with.
+    Save some time information in grade_info.
+    Repaired net will be saved as 'test_dir/repaired_nets/{repair_method_name}.pnml
+
+    Parameters
+    ------------
+    test_dirs
+        list of test directories
+        format of each directory is specified above
+    repair_method_name
+        name of the method for the resulting net file
+    """
     for test_dir in test_dirs:
         logging.info(f'=== {repair_method_name} for {test_dir} ===')
         given_net, given_im, given_fm, perfect_net, perfect_im, perfect_fm, log = load_test_dir(test_dir)
